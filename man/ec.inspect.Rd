@@ -2,23 +2,23 @@
 % Please edit documentation in R/echarty.R
 \name{ec.inspect}
 \alias{ec.inspect}
-\title{Convert chart to JSON}
+\title{Chart to JSON}
 \usage{
-ec.inspect(e, json = TRUE, ...)
+ec.inspect(wt, json = TRUE, ...)
 }
 \arguments{
-\item{e}{An \code{echarty} widget as returned by \link{ec.init}}
+\item{wt}{An \code{echarty} widget as returned by \link{ec.init}}
 
 \item{json}{Whether to return a JSON, or a \code{list}, default TRUE}
 
-\item{...}{Additional options to pass to \code{\link[jsonlite]{toJSON}}}
+\item{...}{Additional arguments to pass to \code{\link[jsonlite]{toJSON}}}
 }
 \value{
 A JSON string if \code{json} is \code{TRUE} and
 a \code{list} otherwise.
 }
 \description{
-Convert chart to JSON
+Convert chart to JSON string
 }
 \note{
 Must be passed as last option.

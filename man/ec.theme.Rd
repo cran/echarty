@@ -4,10 +4,10 @@
 \alias{ec.theme}
 \title{Themes}
 \usage{
-ec.theme(e, name, code = NULL)
+ec.theme(wt, name, code = NULL)
 }
 \arguments{
-\item{e}{An \code{echarty} widget as returned by \link{ec.init}}
+\item{wt}{An \code{echarty} widget as returned by \link{ec.init}}
 
 \item{name}{Name of existing theme file (without extension), or name of custom theme defined in \code{code}.}
 
@@ -17,10 +17,10 @@ ec.theme(e, name, code = NULL)
 An \code{echarty} widget.
 }
 \description{
-Apply a pre-built theme to a chart
+Apply a pre-built or custom coded theme to a chart
 }
 \details{
-Just a few themes are included in folder 'inst/themes'. The entire collection could be found \href{https://github.com/apache/echarts/tree/master/theme}{here} and copied if needed.
+Just a few themes are included in folder \code{inst/themes}. The entire collection could be found \href{https://github.com/apache/echarts/tree/master/theme}{here} and copied if needed.
 }
 \examples{
 mtcars \%>\% ec.init() \%>\% ec.theme('dark-mushroom')

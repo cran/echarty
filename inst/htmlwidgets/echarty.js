@@ -44,7 +44,8 @@ HTMLWidgets.widget({
         }
         if(x.hasOwnProperty('registerMap')){
           for( let map = 0; map < x.registerMap.length; map++){
-            echarts.registerMap(x.registerMap[map].mapName, x.registerMap[map].geoJSON);
+            echarts.registerMap(x.registerMap[map].mapName, 
+                                x.registerMap[map].geoJSON);
           }
         }
         
@@ -74,7 +75,7 @@ HTMLWidgets.widget({
         if (eva2) {
           try {
             eval(eva2);
-          } catch(err) { console.log('Eva2:' + err.message) }
+          } catch(err) { console.log('eva2:' + err.message) }
         }
         
         // shiny callbacks
@@ -199,6 +200,98 @@ HTMLWidgets.widget({
         if(x.hasOwnProperty('groupDisconnect')){
           echarts.disconnect(x.groupDisconnect);
         }
+        
+        /* ---------------- crosstalk ----------------
+          keys are numbered differently depending on the source: 
+              R = 1:n, JS = 0:(n-1)   unselect all if sel.count==total
+        */
+    	  // check crosstalk bindings
+      	if ((typeof x.settings)!='undefined' &&
+      	    (typeof x.settings.crosstalk_key)!='undefined' && 
+      	    (typeof x.settings.crosstalk_group)!='undefined' &&
+      	    x.settings.crosstalk_key !=null && 
+      	    x.settings.crosstalk_group !=null) {
+
+      	  console.log(' echarty crosstalk on');
+      	  
+      	  var sel_handle = new crosstalk.SelectionHandle();
+          var ct_filter = new crosstalk.FilterHandle();
+    
+      	  chart.on("brushselected", function(keys) {    // send keys FROM echarty
+      	    let items = [];
+      	    if (keys.batch)
+        	    items = keys.batch[0].selected[0].dataIndex;
+      	    if (items && items.length>0) {
+      	      //console.log('dindex='+items);
+      	      for (let i=0; i < items.length; ++i) ++items[i];
+              sel_handle.set(items);
+      	    }
+          });
+      	  chart.on("brushEnd", function(keys) {    // release selection FROM echarty
+      	    if (keys.areas.length==0)
+      	      sel_handle.set([]);
+      	  })
+      	  
+      	  // Highlight points selected by another widget
+      	  sel_handle.on("change", function(e) {  
+      	    if (e.sender !== sel_handle) {     // get external keys to highlight/brush
+      	      //console.log('brush='+e.value);
+              
+        	    if (e.value.length>0) {
+        	      for (let i=0; i < e.value.length; ++i) --e.value[i];
+        	      chart.dispatchAction({type:'highlight', 
+        	                            seriesIndex:0, dataIndex:e.value });
+        	      sel_handle.save = e.value;
+        	    } else if (sel_handle.save) {   // clear selected
+                chart.dispatchAction({type:'downplay', 
+                                      seriesIndex:0, dataIndex:sel_handle.save }); 
+                sel_handle.save = null;
+              }
+            }
+      	  });
+      	  
+      	  chart.key = x.settings.crosstalk_key;
+      	  
+          sel_handle.setGroup(x.settings.crosstalk_group);
+      
+          // --- filtering ---
+      	  chart.on("selectchanged", function(keys) {
+      	    let items = [];
+            if (keys.selected.length>0)
+        	      items = keys.selected[0].dataIndex;
+        	  //console.log('fselchg=' + items);
+      	    if (keys.isFromClick) {           // send keys FROM echarty
+      	      for (let i=0; i < items.length; ++i) ++items[i];
+      	      if (items.length==0) items = this.key;   // send all keys = filter off
+        	    ct_filter.set(items);
+      	    } else if (keys.fromAction != 'unselect')
+        	    ct_filter.save = items;
+      	  })
+      	  ct_filter.on("change", function(e) {    // only external keys to filter
+      	    if (e.sender == ct_filter) return;
+      	    //console.log('filter='+e.value);
+            if (ct_filter.save) {   // clear selected 
+              chart.dispatchAction({type:'unselect', 
+                                    seriesIndex:0, dataIndex:ct_filter.save });
+              ct_filter.save = null;
+            }
+      	    if (e.value) {
+      	      for (let i=0; i < e.value.length; ++i) --e.value[i];
+      	      if (e.value.length == chart.key.length) {
+                chart.dispatchAction({type:'unselect', 
+                                            seriesIndex:0, dataIndex:e.value });
+                return;
+      	      }
+        	    chart.dispatchAction({type:'select', 
+        	                          seriesIndex:0, dataIndex:e.value });
+        	    ct_filter.save = e.value;  // save to unselect later
+      	    }
+      	  })
+          // Choose group for Filter
+          ct_filter.setGroup(x.settings.crosstalk_group);	  
+      
+      	}   
+      	// ---------------- end crosstalk
 
       },
       
@@ -224,9 +317,10 @@ HTMLWidgets.widget({
 
 function get_e_charts(id){
 
-  var htmlWidgetsObj = HTMLWidgets.find("#" + id);
+  let htmlWidgetsObj = HTMLWidgets.find("#" + id);
+  if (!htmlWidgetsObj) return(null);
 
-  var echarts;
+  let echarts;
 
   if (typeof htmlWidgetsObj != 'undefined') {
     echarts = htmlWidgetsObj.getChart();
@@ -238,6 +332,7 @@ function get_e_charts(id){
 function get_e_charts_opts(id){
 
   let htmlWidgetsObj = HTMLWidgets.find("#" + id);
+  if (!htmlWidgetsObj) return(null);
 
   let opts;
 
@@ -279,23 +374,72 @@ if (HTMLWidgets.shinyMode) {
           chart.setOption(data.opts);
           break;
           
-        case 'p_replace':
+        case 'p_replace':     // replace entire chart
           chart.setOption(data.opts, true);
           break;
-
-        case 'p_append_data':
-          chart.appendData({
-            seriesIndex: cpts.seriesIndex,
-            data: cpts.data
-          });
+          
+        case 'p_update':    // more like 'append serie'
+          
+          if(!cpts.series)  // add series array if none
+            cpts.series = [];
+  
+          data.opts.series.forEach(function(serie){
+            // for JS_EVAL and renderItem
+            if (typeof serie.renderItem == 'string') 
+              serie.renderItem = eval(serie.renderItem);
+            cpts.series.push(serie);
+          })
+  
+          if (data.opts.legend) {    // legend
+            if(cpts.legend.length > 0)
+              if(data.opts.legend.data)
+                cpts.legend[0].data = cpts.legend[0].data.concat(data.opts.legend.data);
+          }
+          if (data.opts.xAxis) {    // x Axis
+            if(cpts.xAxis){
+              if(cpts.xAxis[0].data){
+                let xaxis = cpts.xAxis[0].data.concat(data.opts.xAxis[0].data);
+                xaxis = xaxis.filter(distinct);
+                cpts.xAxis[0].data = xaxis;
+              }
+            } else
+              cpts.xAxis = data.opts.xAxis;
+          }
+          if (data.opts.yAxis) {    // y Axis
+            if(cpts.yAxis){
+              if(cpts.yAxis[0].data){
+                let yaxis = cpts.yAxis[0].data.concat(data.opts.yAxis[0].data);
+                yaxis = yaxis.filter(distinct);
+                cpts.yAxis[0].data = yaxis;
+              }
+            }
+          }
+          if (data.opts.dataset) 
+            cpts.dataset = data.opts.dataset;
+console.log('user.opts='+Object.keys(data.opts))
+          chart.setOption(cpts, true);
           break;
           
-        case 'p_dispatch':
-          chart.dispatchAction(data.opts);
+        case 'p_append_data':       // add data to one serie
+          if (!cpts.series) break;
+          if (data.opts.seriesName) {
+            // find index by name
+            var idx = 0;
+            cpts.series.forEach(function(serie) {
+              if (serie.name==data.opts.seriesName) data.opts.seriesIndex = idx;
+              idx++;
+            })
+            //console.log('appd ',data.opts.seriesName,'=',data.opts.seriesIndex)
+          }
+          if (data.opts.seriesIndex)
+            chart.appendData({
+              seriesIndex: data.opts.seriesIndex,
+              data: data.opts.data
+            });
           break;
         
         case 'p_del_serie':
-          if(data.opts.seriesName){
+          if (data.opts.seriesName) {
             let series = cpts.series;
             series.forEach( function(s, index) {
               if(s.name == data.opts.seriesName){
@@ -304,7 +448,7 @@ if (HTMLWidgets.shinyMode) {
             }, series)
             cpts.series = series;
           }
-          else if(data.opts.seriesIndex)
+          else if (data.opts.seriesIndex)
             cpts.series = cpts.series.splice(data.opts.seriesIndex, 1);
           chart.setOption(cpts, true);
           break;
@@ -330,43 +474,8 @@ if (HTMLWidgets.shinyMode) {
           chart.setOption(cpts, true);
           break;
           
-        case 'p_update':
-          
-          if(!cpts.series)  // add series if none
-            cpts.series = [];
-  
-          data.opts.series.forEach(function(serie){
-            // for JS_EVAL and renderItem
-            if (typeof serie.renderItem == 'string') 
-              serie.renderItem = eval(serie.renderItem);
-            cpts.series.push(serie);
-          })
-  
-          if (data.opts.legend) {    // legend
-            if(cpts.legend.length > 0)
-              if(data.opts.legend.data)
-                cpts.legend[0].data = cpts.legend[0].data.concat(data.opts.legend.data);
-          }
-          if (data.opts.xAxis) {    // x Axis
-            if(cpts.xAxis){
-              if(cpts.xAxis[0].data){
-                let xaxis = cpts.xAxis[0].data.concat(data.opts.xAxis[0].data);
-                xaxis = xaxis.filter(distinct);
-                cpts.xAxis[0].data = xaxis;
-              }
-            }
-          }
-          if (data.opts.yAxis) {    // y Axis
-            if(cpts.yAxis){
-              if(cpts.yAxis[0].data){
-                let yaxis = cpts.yAxis[0].data.concat(data.opts.yAxis[0].data);
-                yaxis = yaxis.filter(distinct);
-                cpts.yAxis[0].data = yaxis;
-              }
-            }
-          }
-          
-          chart.setOption(cpts, true);
+        case 'p_dispatch':
+          chart.dispatchAction(data.opts);
           break;
           
         default:
