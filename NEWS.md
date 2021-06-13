@@ -1,5 +1,22 @@
 # log history of echarty package development
 
+## v. 0.2.0
+
+- removed dependencies for Shiny and crosstalk
+- js2r and eshiny are now R demos
+- change leaflet plugin source.data to dataset, preset center and zoom
+- built with latest R v.4.1.0
+
+## v. 0.1.4
+
+- upgrade to ECharts v.5.1.1
+- fixed p_del_serie by seriesName
+- expand Shiny demo and moved from ec.examples() to a gist 
+- replaced purrr with apply in ec.data, purrr no longer a dependency
+- ec.init group1 now is also default for ungrouped serie 
+- added svg maps, like registerMap=list(list(mapName=?, svg=?))
+- new ec.layout(), a charts layout helper
+
 ## v. 0.1.3
 
 - crosstalk support added, send & receive for brush and filter actions

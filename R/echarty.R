@@ -6,7 +6,7 @@
 #'
 #' @param df A data.frame to be preset as \href{https://echarts.apache.org/en/option.html#dataset}{dataset}, default NULL \cr
 #'     For crosstalk df should be of type \code{\link[crosstalk]{SharedData}}.
-#' @param group1 Type of grouped series, default 'scatter'. Set to NULL to disable. \cr
+#' @param group1 Type of grouped series, or type of first ungrouped serie. Default is 'scatter'. Set to NULL to disable. \cr
 #'     If the grouping is on multiple columns, only the first one is used.
 #' @param preset Disable(FALSE) or enable (TRUE, default) presets xAxis,yAxis,serie for 2D, or grid3D,xAxis3D,yAxis3D,zAxis3D for 3D.
 #' @param load Name(s) of plugin(s) to load. Could be a character vector or comma-delimited string. default NULL.\cr
@@ -40,7 +40,6 @@
 #'  cars %>% ec.init()
 #'  
 #' @importFrom htmlwidgets createWidget sizingPolicy getDependency JS shinyWidgetOutput shinyRenderWidget
-#' @importFrom crosstalk is.SharedData crosstalkLibs
 #' 
 #' @export
 ec.init <- function( df = NULL, group1 = 'scatter', preset = TRUE, load = NULL,
@@ -54,20 +53,29 @@ ec.init <- function( df = NULL, group1 = 'scatter', preset = TRUE, load = NULL,
   if (preset) {
     if (!('xAxis' %in% names(opts))) opts$xAxis <- list(ey='')
     if (!('yAxis' %in% names(opts))) opts$yAxis <- list(ey='')
-    if (!('series' %in% names(opts))) opts$series <- list(list())
-    opts$series[[1]] <- list(type='scatter')
+    if (!('series' %in% names(opts))) opts$series <- list(
+    	list(type=if (is.null(group1)) 'scatter' else group1) )
+    #opts$series[[1]] <- list(type='scatter')
   }
 
-  
-  if (crosstalk::is.SharedData(df)) {
-    # Using Crosstalk
-    key <- df$key()
-    group <- df$groupName()
-    df <- df$origData()
-    deps <- crosstalk::crosstalkLibs()
-  } else {
-    # Not using Crosstalk
-    key <- group <- deps <- NULL
+  if (requireNamespace("crosstalk", quietly = TRUE)) {  # replaced ' @importFrom crosstalk is.SharedData crosstalkLibs
+    if (crosstalk::is.SharedData(data)) {
+      crosstalkKey <- as.list(data$key())
+      crosstalkGroup <- data$groupName()
+      data <- data$origData()
+      dependencies <- crosstalk::crosstalkLibs()
+    }
+  }
+
+  key <- group <- deps <- NULL
+  if (requireNamespace("crosstalk", quietly = TRUE)) {
+    if (crosstalk::is.SharedData(df)) {
+      # Using Crosstalk
+      key <- as.list(df$key())
+      group <- df$groupName()
+      df <- df$origData()
+      deps <- crosstalk::crosstalkLibs()
+    }
   }
   
   # forward widget options using x
@@ -100,10 +108,10 @@ ec.init <- function( df = NULL, group1 = 'scatter', preset = TRUE, load = NULL,
       x$opts$legend = list(data=list())
       for(i in grvals) { 
         k <- k+1
-        srch4 <- i
-        if ('factor' %in% class(grvals)) srch4 <- k
+        #srch4 <- i
+        #if ('factor' %in% class(grvals)) srch4 <- k
         txfm <- append(txfm, list(list(transform = list(
-          type='filter', config=list(dimension=grnm, '='=srch4)))))
+          type='filter', config=list(dimension=grnm, '='=i)))))
         x$opts$series[[k]] <- list(
           type=group1, datasetIndex=k, name=as.character(i))
         x$opts$legend$data <- append(x$opts$legend$data, list(list(name=as.character(i))))
@@ -147,21 +155,25 @@ ec.init <- function( df = NULL, group1 = 'scatter', preset = TRUE, load = NULL,
   if ('leaflet' %in% load) {
     if (preset) {
       # customizations for leaflet
-      wt$x$opts$dataset <- NULL  # dataset not suitable, data must be in series
       wt$x$opts$xAxis <- NULL
       wt$x$opts$yAxis <- NULL
       urltls <- getOption('ECHARTS_TILES')
       if (is.null(urltls))
         urltls <- 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
       wt$x$opts$leaflet = list(
-        roam = TRUE, 
+        roam = TRUE,
         tiles = list( list(urlTemplate = urltls))
       )
-  
-      # leaflet user data should be ordered (lon,lat)!
-      if (!is.null(df))
-        wt$x$opts$series[[1]]$data <- ec.data(df, 'values')
       wt$x$opts$series[[1]]$coordinateSystem <- 'leaflet'
+      
+      # user should order the leaflet data  (lon,lat)
+      if (!is.null(df)) {
+	      rlo <- range(df[,1])
+	      rla <- range(df[,2])
+	      wt$x$opts$leaflet$center= c(sum(rlo)/2, sum(rla)/2)
+	      wt$x$opts$leaflet$zoom <- 8
+        #wt$x$opts$series[[1]]$data <- ec.data(df, 'dataset', header=FALSE)
+      }
     }
     
     dep <- htmltools::htmlDependency(
@@ -189,7 +201,7 @@ ec.init <- function( df = NULL, group1 = 'scatter', preset = TRUE, load = NULL,
       wt$x$opts$yAxis3D <- list(list())
       wt$x$opts$zAxis3D <- list(list())
     }
-    wt <- ec.plugjs(wt, 'https://cdn.jsdelivr.net/npm/echarts-gl@2.0.2/dist/echarts-gl.min.js')
+    wt <- ec.plugjs(wt, 'https://cdn.jsdelivr.net/npm/echarts-gl@2.0.4/dist/echarts-gl.min.js')
   }
   if ('world' %in% load) 
     wt <- ec.plugjs(wt, 'https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/js/world.js')
@@ -198,7 +210,7 @@ ec.init <- function( df = NULL, group1 = 'scatter', preset = TRUE, load = NULL,
     wt <- ec.plugjs(wt, 'https://cdn.jsdelivr.net/npm/echarts-liquidfill@3.0.0/dist/echarts-liquidfill.min.js')
   
   if ('gmodular' %in% load) 
-    wt <- ec.plugjs(wt, 'https://github.com/ecomfe/echarts-graph-modularity/raw/master/dist/echarts-graph-modularity.min.js')
+    wt <- ec.plugjs(wt, 'https://cdn.jsdelivr.net/npm/echarts-graph-modularity@2.0.0/dist/echarts-graph-modularity.min.js')
   
   if ('wordcloud' %in% load) 
     wt <- ec.plugjs(wt, 'https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.0.0/dist/echarts-wordcloud.min.js')
@@ -243,8 +255,8 @@ ec.plugjs <- function(wt=NULL, source=NULL) {
     stop('ec.plugjs expecting widget', call. = FALSE)
   if (is.null(source)) return(wt)
   fname <- basename(source)
-  if (!endsWith(fname, '.js'))
-    stop('ec.plugjs expecting .js suffix', call. = FALSE)
+  # if (!endsWith(fname, '.js'))
+  #   stop('ec.plugjs expecting .js suffix', call. = FALSE)
   path <- system.file('js', package = 'echarty')
   ffull <- paste0(path,'/',fname)
   if (!file.exists(ffull)) {
@@ -275,15 +287,15 @@ ec.plugjs <- function(wt=NULL, source=NULL) {
 }
 
 
-#' ECharts data helper
+#' Data helper
 #' 
 #' Make ECharts data from a data.frame
 #' 
-#' @param df Chart data in data.frame format, required
+#' @param df Chart data in data.frame format, required. 
 #' @param format A key on how to format the output list \cr \itemize{
-#'  \item 'dataset' = list used in \href{https://echarts.apache.org/en/option.html#dataset.source}{dataset} (default), or in \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} but without a header.\cr
+#'  \item 'dataset' = list to be used in \href{https://echarts.apache.org/en/option.html#dataset.source}{dataset} (default), or in \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} but without a header. \cr
 #'  \item 'values' = list for customized \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} \cr
-#'  \item 'names' = named lists useful for named data like \href{https://echarts.apache.org/en/option.html#series-sankey.links}{sankey links}
+#'  \item 'names' = named lists useful for named data like \href{https://echarts.apache.org/en/option.html#series-sankey.links}{sankey links}.
 #'  }
 #' @param header Whether the data will have a header with column names or not, default TRUE. Set this to FALSE when used in \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data}.
 #' @return A list for \emph{dataset.source}, \emph{series.data} or a list of named lists.
@@ -296,7 +308,14 @@ ec.data <- function(df, format='dataset', header=TRUE) {
     stop('df has to be data.frame', call. = FALSE)
   
   # TODO: replace purrr with something simpler
-  tmp <- purrr::transpose(df)       # named lists
+  #tmp <- purrr::transpose(df)       # named lists
+  rownames(df) <- NULL
+  tmp <- apply(df, 1, function(x) {
+    out <- list()
+    i <- 1
+    for(n in colnames(df)) { out[n] <- x[i]; i <- i+1 }
+    out 
+  })
   if (format=='dataset') {
     datset <- lapply(tmp, unname)
     if (header)
@@ -371,6 +390,69 @@ ec.timegrp <- function(wt, df=NULL, scol=NULL, xcol=NULL, type='line', ...) {
   wt
 }
 
+
+
+#' Charts layout
+#' 
+#' Set multiple charts in rows/columns format
+#' 
+#' @param plots A list of charts
+#' @param rows Number of rows
+#' @param cols Number of columns
+#' @param width Width of columns, one of xs, md, lg
+#' @param title Title for the set
+#' @return A container \code{\link[htmltools]{div}} in rmarkdown, otherwise \code{\link[htmltools]{browsable}}
+#' @examples
+#' 
+#' if (interactive()) {
+#'   p1 <- cars %>% ec.init()
+#'   p2 <- cars %>% ec.init() %>% ec.theme('dark')
+#'   ec.layout(list(p1,p2), cols=2 )
+#' }
+#' 
+#' @export 
+ec.layout <- function (plots, rows = NULL, cols = NULL, width = "xs", 
+                       title = NULL) 
+{
+  if (!is.list(plots))
+    stop('ec.layout charts must be a list', call. = FALSE)
+  if (is.null(rows) & !is.null(cols)) rows <- ceiling(length(plots)/cols)
+  if (!is.null(rows) & is.null(cols)) cols <- ceiling(length(plots)/rows)
+  if (is.null(rows) & is.null(cols)) { rows <- length(plots); cols <- 1 }
+  w <- "-xs"
+  if (!isTRUE(getOption("knitr.in.progress"))) w <- ""
+  x <- 0
+  tg <- htmltools::tagList()
+  for (i in 1:rows) {
+    r <- htmltools::div(class = "row")
+    for (j in 1:cols) {
+      x <- x + 1
+      cl <- paste0("col", w, "-", 12/cols)
+      if (x <= length(plots))
+        c <- htmltools::div(class = cl, plots[[x]])
+      else 
+        c <- htmltools::div(class = cl)
+      r <- htmltools::tagAppendChild(r, c)
+    }
+    tg <- htmltools::tagAppendChild(tg, r)
+  }
+  if (isTRUE(getOption("knitr.in.progress"))) {
+    if (!is.null(title))
+      htmltools::div(title, tg)
+    else
+      tg
+  }
+  else
+    htmltools::browsable(
+      htmltools::div(
+        class = "container-fluid", 
+        htmltools::tags$head(
+          htmltools::tags$link(
+            rel = "stylesheet", 
+            href = "https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
+          )),
+        htmltools::h3(title), tg))
+}
 
 
 #' Area band
@@ -544,31 +626,6 @@ ecr.ebars <- function(wt, df, hwidth=6, ...) {
 }
 
 
-#' JS-to-R Translator Assistant 
-#' 
-#' Translate Javascript data objects to R
-#' 
-#' @return none
-#'
-#' @details Learn from Javascript examples of \href{https://echarts.apache.org/examples/en/}{ECharts}. This Shiny application helps translate JSON-like JavaScript data structures to R lists.\cr
-#'  Additional information is available by clicking the \emph{Info} button inside.
-#' @import shiny
-#' @export
-ec.js2r <- function() {
-  if (interactive()) {
-    prompt <- paste0('Ready to launch Translation Assistant\n Would you like to proceed ?')
-    ans <- FALSE
-    if (interactive())
-      ans <- askYesNo(prompt)
-    if (is.na(ans)) ans <- FALSE  # user canceled
-    if (ans) {
-      shiny::runGist('https://gist.github.com/helgasoft/819035e853d9889ba02cb69ecc587f34',quiet=TRUE)
-    }
-  }
-  return(NULL)
-}
-
-
 
 # ----------- Shiny --------------
 #'
@@ -584,6 +641,7 @@ ec.js2r <- function() {
 #'
 #' @seealso [ecs.exec] for example, \code{\link[htmlwidgets]{shinyWidgetOutput}} for return value.
 #' 
+#' @importFrom htmlwidgets shinyWidgetOutput
 #' @export
 ecs.output <- function(outputId, width = '100%', height = '400px') {
   htmlwidgets::shinyWidgetOutput(outputId, 'echarty', width, height, package = 'echarty')
@@ -599,8 +657,9 @@ ecs.output <- function(outputId, width = '100%', height = '400px') {
 #' @param quoted Is \code{expr} a quoted expression? default FALSE.
 #' @return An output or render function that enables the use of the widget within Shiny applications.
 #'   
-#' @seealso [ecs.exec] for example, \code{\link[htmlwidgets]{shinyWidgetOutput}} for return value.
+#' @seealso [ecs.exec] for example, \code{\link[htmlwidgets]{shinyRenderWidget}} for return value.
 #' 
+#' @importFrom htmlwidgets shinyRenderWidget
 #' @export
 ecs.render <- function(wt, env=parent.frame(), quoted=FALSE) {
   if (!quoted) {
@@ -620,10 +679,13 @@ ecs.render <- function(wt, env=parent.frame(), quoted=FALSE) {
 #' 
 #' @seealso [ecs.exec] for example.
 #' 
-#' @importFrom shiny getDefaultReactiveDomain
 #' @export
 ecs.proxy <- function(id) {
-  proxy <- list(id = id, session = shiny::getDefaultReactiveDomain())
+  if (requireNamespace("shiny", quietly = TRUE)) {
+    sessi <- shiny::getDefaultReactiveDomain()
+  } else
+    return(invisible(NULL))
+  proxy <- list(id = id, session = sessi)
   class(proxy) <- 'ecsProxy'
   return(proxy)
 }
@@ -635,9 +697,10 @@ ecs.proxy <- function(id) {
 #'
 #' @param proxy A [ecs.proxy] object
 #' @param cmd Name of command, default is \emph{p_merge}\cr
-#'   Other proxy commands:\cr
+#'   The proxy commands are:\cr
 #' \emph{p_update} - add new series and axes\cr
 #' \emph{p_merge} - add serie features like marks\cr
+#' \emph{p_replace} - replace entire chart \cr
 #' \emph{p_del_serie} - delete a serie by index or name\cr
 #' \emph{p_del_marks} - delete marks of a serie\cr
 #' \emph{p_append_data} - add data to existing series\cr
@@ -648,110 +711,7 @@ ecs.proxy <- function(id) {
 #' 
 #' @examples
 #' if (interactive()) {
-#' 
-#' library(shiny)
-#' runApp( list(
-#' ui = fluidPage(
-#'   ecs.output('plot'),
-#'   fluidRow(
-#'     column(4, actionButton('addm', 'Add marks'),
-#'            actionButton('delm', 'Delete marks'),
-#'            br(),span('mark points stay, area/line deletable')
-#'     ),
-#'     column(3, actionButton('adds', 'Add serie'),
-#'            actionButton('dels', 'Del serie')),
-#'     column(5, actionButton('adata', 'Add data'),
-#'            actionButton('hilit', 'Highlight'),
-#'            actionButton('dnplay', 'Downplay') )
-#'   )
-#' ),
-#' server = function(input, output, session) {
-#' 
-#'   output$plot <- ecs.render({
-#'     p <- ec.init()
-#'     p$x$opts$series <- lapply(mtcars %>% relocate(disp, .after=mpg)
-#'                               %>% group_by(cyl) %>% group_split(), function(s) {
-#'                                 list(type='scatter', name=unique(s$cyl), data=ec.data(s, 'values'))
-#'                               })
-#'     p$x$opts$legend <- list(ey='')
-#'     p$x$opts$xAxis <- list(type="value"); p$x$opts$yAxis <- list(ec='')
-#'     p$x$opts$tooltip <- list(list(show=TRUE))
-#'     p$x$opts$series[[1]]$emphasis <- list(focus='series', blurScope='coordinateSystem')
-#'     p
-#'   })
-#' 
-#'   observeEvent(input$addm, {
-#'     p <- ecs.proxy('plot')
-#'     p$x$opts$series = list( list(
-#'       markPoint = list(data = list(
-#'         list(coord = c(22.5, 140.8)),
-#'         list(coord = c(30.5, 95.1))
-#'       ),
-#'       itemStyle = list(color='lightblue')
-#'       )
-#'       ,markArea = list(data = list(list(
-#'         list(xAxis = 15),
-#'         list(xAxis = 25)
-#'       ))
-#'       ,silent=TRUE
-#'       ,itemStyle = list(color='pink', opacity=0.2)
-#'       ,label = list(formatter='X-area', position='insideTop')
-#'       )
-#'       ,markLine = list(data = list(list(type='average')))
-#'     ), list(
-#'       markPoint = list(data = list(
-#'         list(coord = c(25.5, 143.8)),
-#'         list(coord = c(33.5, 98.1))
-#'       ),
-#'       itemStyle = list(color='forestgreen')
-#'       )
-#'     ))
-#'     p %>% ecs.exec() # ='p_merge'
-#'   })
-#'   observeEvent(input$adds, {
-#'     p <- ecs.proxy('plot')
-#'     p$x$opts$series <- list(list(
-#'       type = 'line', name = 'newLine',
-#'       #encode = list(x='mpg', y='disp')  # for dataset only
-#'       data=list(list(10,100),list(5,200),list(10,400),list(10,200),list(15,150),list(5,300))
-#'     ))
-#'     p %>% ecs.exec('p_update')
-#'   })
-#' 
-#'   observeEvent(input$adata, {
-#'     set.seed(sample(1:444, 1))
-#'     tmp <- apply(unname(data.frame(rnorm(5, 10, 3), rnorm(5, 200, 33))),
-#'                  1, function(x) { list(value=x) })
-#'     p <- ecs.proxy('plot')
-#'     p$x$opts$seriesIndex <- 1
-#'     p$x$opts$data <- tmp
-#'     p %>% ecs.exec('p_append_data')
-#'   })
-#' 
-#'   observeEvent(input$dels, {
-#'     p <- ecs.proxy('plot')
-#'     p$x$opts$seriesName <- 'newLine'
-#'     #'p$x$opts$seriesIndex <- 4  # ok too
-#'     p %>% ecs.exec('p_del_serie')
-#'   })
-#'   observeEvent(input$delm, {
-#'     p <- ecs.proxy('plot')
-#'     p$x$opts$seriesIndex <- 1
-#'     p$x$opts$delMarks <- c('markArea','markLine')
-#'     p %>% ecs.exec('p_del_marks')
-#'   })
-#'   observeEvent(input$hilit, {
-#'     p <- ecs.proxy('plot')
-#'     p$x$opts <- list(type='highlight', seriesName='4')
-#'     p %>% ecs.exec('p_dispatch')
-#'   })
-#'   observeEvent(input$dnplay, {
-#'     p <- ecs.proxy('plot')
-#'     p$x$opts <- list(type='downplay', seriesName='4')
-#'     p %>% ecs.exec('p_dispatch')
-#'   })
-#' } ))
-#'   
+#'    demo(eshiny, package='echarty')
 #' }
 #' 
 #' @export
@@ -770,10 +730,12 @@ ecs.exec <- function(proxy, cmd='p_merge') {
   
   # create web dependencies for JS, if present
   if (!is.null(proxy$dependencies)) {
-    deps <- list(shiny::createWebDependency(
-      htmltools::resolveDependencies( proxy$dependencies )[[1]]
-    ))
-    plist$deps <- deps
+    if (requireNamespace("shiny", quietly = TRUE)) {
+      deps <- list(shiny::createWebDependency(
+        htmltools::resolveDependencies( proxy$dependencies )[[1]]
+      ))
+      plist$deps <- deps
+    }
   }
   
   proxy$session$sendCustomMessage('kahuna', plist)
@@ -820,10 +782,11 @@ ec.global <- function(options = NULL) {
 #'
 #' @param wt An \code{echarty} widget as returned by [ec.init]
 #' @param name Name of existing theme file (without extension), or name of custom theme defined in \code{code}.
-#' @param code Custom theme code in JSON format, default NULL.
+#' @param code Custom theme as JSON formatted string, default NULL.
 #' @return An \code{echarty} widget.
 #'
-#' @details Just a few themes are included in folder \code{inst/themes}. The entire collection could be found \href{https://github.com/apache/echarts/tree/master/theme}{here} and copied if needed.
+#' @details Just a few built-in themes are included in folder \code{inst/themes}. The entire collection could be found \href{https://github.com/apache/echarts/tree/master/theme}{here} and copied if needed.\cr
+#'   To create custom themes or view predefined ones, visit \href{https://echarts.apache.org/en/theme-builder.html}{this site}.
 #'
 #' @examples
 #' mtcars %>% ec.init() %>% ec.theme('dark-mushroom')
@@ -934,29 +897,32 @@ ec.fromJson <- function(txt, ...) {
   wt
 }
 
-# for Shiny actions
-.onAttach <- function(libname, pkgname) {
-  shiny::registerInputHandler('echartyParse', function(data, ...) {
-    jsonlite::fromJSON(jsonlite::toJSON(data, auto_unbox = TRUE))
-  }, force = TRUE)
-  
-  options(
-    'ECHARTS_THEME' = NULL,
-    'ECHARTS_FONT' = NULL,
-    'ECHARTS_TILES' = NULL
-  )
-}
+if (requireNamespace("shiny", quietly = TRUE)) {
 
-.onLoad <- function(libname, pkgname) {
-  shiny::registerInputHandler('echartyParse', function(data, ...) {
-    jsonlite::fromJSON(jsonlite::toJSON(data, auto_unbox = TRUE))
-  }, force = TRUE)
-  
-  options(
-    'ECHARTS_THEME' = NULL,
-    'ECHARTS_FONT' = NULL,
-    'ECHARTS_TILES' = NULL
-  )
+  # for Shiny actions
+  .onAttach <- function(libname, pkgname) {
+    shiny::registerInputHandler('echartyParse', function(data, ...) {
+      jsonlite::fromJSON(jsonlite::toJSON(data, auto_unbox = TRUE))
+    }, force = TRUE)
+    
+    options(
+      'ECHARTS_THEME' = NULL,
+      'ECHARTS_FONT' = NULL,
+      'ECHARTS_TILES' = NULL
+    )
+  }
+
+  .onLoad <- function(libname, pkgname) {
+    shiny::registerInputHandler('echartyParse', function(data, ...) {
+      jsonlite::fromJSON(jsonlite::toJSON(data, auto_unbox = TRUE))
+    }, force = TRUE)
+    
+    options(
+      'ECHARTS_THEME' = NULL,
+      'ECHARTS_FONT' = NULL,
+      'ECHARTS_TILES' = NULL
+    )
+  }
 }
 
 #' Pipe operator
