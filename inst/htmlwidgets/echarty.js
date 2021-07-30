@@ -2,15 +2,15 @@
 HTMLWidgets.widget({
 
   name: 'echarty',
-
   type: 'output',
 
   factory: function(el, width, height) {
     
     var initialized = false;
 
-    var chart,opts;
-
+    var chart, opts;
+    
+    // does the job of htmlwidgets:::JSEvals and JS_EVAL for proxy
     const evalFun = (sourceOpts) => {
       let opts = Object.assign({}, sourceOpts);
       Object.keys(opts).forEach((key) => {
@@ -73,14 +73,14 @@ HTMLWidgets.widget({
         
         opts = evalFun(x.opts);
         
-        if(x.draw === true)
-          chart.setOption(opts);
-        
         if (eva2) {
           try {
             eval(eva2);
           } catch(err) { console.log('eva2:' + err.message) }
         }
+        
+        if(x.draw === true)
+          chart.setOption(opts);
         
         // shiny callbacks
         if (HTMLWidgets.shinyMode) {
@@ -104,39 +104,32 @@ HTMLWidgets.widget({
           });
           
           if(x.hasOwnProperty('capture')){
+            // for events not included below, like "datazoom"
             chart.on(x.capture, function(e){
               Shiny.onInputChange(el.id + '_' + x.capture + ecp, e, {priority: 'event'});
             });
           }
           
           chart.on("click", function(e){
-            Shiny.onInputChange(el.id + '_clicked_data' + ecp, e.data, {priority: 'event'});
-            Shiny.onInputChange(el.id + '_clicked_row' + ecp, e.dataIndex + 1, {priority: 'event'});
-            Shiny.onInputChange(el.id + '_clicked_serie' + ecp, e.seriesName, {priority: 'event'});
+            Shiny.onInputChange(el.id + '_clicked_data' + ecp, e.data, {priority:'event'});
+            Shiny.onInputChange(el.id + '_clicked_row' + ecp, e.dataIndex + 1, {priority:'event'});
+            Shiny.onInputChange(el.id + '_clicked_serie' + ecp, e.seriesName, {priority:'event'});
           });
           
           chart.on("mouseover", function(e){
-            Shiny.onInputChange(el.id + '_mouseover_data' + ecp, e.data);
-            Shiny.onInputChange(el.id + '_mouseover_row' + ecp, e.dataIndex + 1);
-            Shiny.onInputChange(el.id + '_mouseover_serie' + ecp, e.seriesName);
+            Shiny.onInputChange(el.id + '_mouseover_data' + ecp, e.data, {priority:'event'});
+            Shiny.onInputChange(el.id + '_mouseover_row' + ecp, e.dataIndex + 1, {priority:'event'});
+            Shiny.onInputChange(el.id + '_mouseover_serie' + ecp, e.seriesName, {priority:'event'});
+          });
+          
+          chart.on("mouseout", function(e){
+            Shiny.onInputChange(el.id + '_mouseout_data' + ecp, e.data, {priority:'event'});
+            Shiny.onInputChange(el.id + '_mouseout_row' + ecp, e.dataIndex + 1, {priority:'event'});
+            Shiny.onInputChange(el.id + '_mouseout_serie' + ecp, e.seriesName, {priority:'event'});
           });
           
           $(document).on('shiny:recalculating', function() {
-            
-            if(x.hideWhite === true){
-              var css = '.recalculating {opacity: 1.0 !important; }',
-                  head = document.head || document.getElementsByTagName('head')[0],
-                  style = document.createElement('style');
-              
-              style.type = 'text/css';
-              if (style.styleSheet){
-                style.styleSheet.cssText = css;
-              } else {
-                style.appendChild(document.createTextNode(css));
-              }
-              head.appendChild(style);
-            }
-            
+
             if(x.loading === true){
               chart.showLoading('default', x.loadingOpts);
             } else if(x.loading === false) {
@@ -205,10 +198,11 @@ HTMLWidgets.widget({
           echarts.disconnect(x.disconnect);
         }
         
-        /* ---------------- crosstalk ----------------
-          keys are numbered differently depending on the source: 
-              R = 1:n, JS = 0:(n-1)   unselect all if sel.count==total
-        */
+        // ---------------- crosstalk ----------------
+        // keys are numbered differently depending on the source: 
+        //      R = 1:n, JS = 0:(n-1)
+        // unselect all if sel.count==total
+        //
     	  // check crosstalk bindings
       	if ((typeof x.settings)!='undefined' &&
       	    (typeof x.settings.crosstalk_key)!='undefined' && 
@@ -308,11 +302,9 @@ HTMLWidgets.widget({
       },
 
       resize: function(width, height) {
-
         if(chart){
           chart.resize({width: width, height: height});
         }
-
       }
 
     };
@@ -354,13 +346,16 @@ function distinct(value, index, self) {
 if (HTMLWidgets.shinyMode) {
 
   Shiny.addCustomMessageHandler('kahuna',
+  
     function(data) {
+      
       var chart = get_e_charts(data.id);
       if (typeof chart == 'undefined') return;
       if (!data.action) return;
       // add JS dependencies if any
       if (data.deps) Shiny.renderDependencies(data.deps);
       let cpts = chart.getOption();
+      //data.opts = evalFun(data.opts);
       
       switch(data.action) {
         
@@ -386,19 +381,14 @@ if (HTMLWidgets.shinyMode) {
           
           if(!cpts.series)  // add series array if none
             cpts.series = [];
-  
+          
           data.opts.series.forEach(function(serie){
-            // for JS_EVAL and renderItem
+            // for renderItem
             if (typeof serie.renderItem == 'string') 
               serie.renderItem = eval(serie.renderItem);
             cpts.series.push(serie);
           })
   
-          if (data.opts.legend) {
-            if(cpts.legend.length > 0)
-              if(data.opts.legend.data)
-                cpts.legend[0].data = cpts.legend[0].data.concat(data.opts.legend.data);
-          }
           if (data.opts.xAxis) {
             if(cpts.xAxis.length > 0){
               if(cpts.xAxis[0].data){
@@ -416,18 +406,26 @@ if (HTMLWidgets.shinyMode) {
                 yaxis = yaxis.filter(distinct);
                 cpts.yAxis[0].data = yaxis;
               }
-            }
+            } else
+              cpts.yAxis = data.opts.yAxis;
           }
+
           if (data.opts.dataset) 
             cpts.dataset = data.opts.dataset;
             
           if (data.opts.toolbox) 
             cpts.toolbox = data.opts.toolbox;
-          //console.log('user.opts='+Object.keys(data.opts))
+            
           chart.setOption(cpts, true);
           break;
           
-        case 'p_append_data':       // add data to one serie
+        case 'p_append_data':       // add data to legend or one serie
+        
+          if (data.opts.legend) {
+            if(cpts.legend.length > 0)
+              if(data.opts.legend.data)
+                cpts.legend[0].data = cpts.legend[0].data.concat(data.opts.legend.data);
+          }
           if (!cpts.series) break;
           if (data.opts.seriesName) {
             // find index by name
@@ -483,6 +481,7 @@ if (HTMLWidgets.shinyMode) {
           break;
           
         default:
+          console.log('unknown command ',data.action);
       }
   });
   

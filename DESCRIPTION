@@ -1,7 +1,7 @@
 Package: echarty
 Title: Minimal R/Shiny Interface to JavaScript Library 'ECharts'
-Date: 2021-06-12
-Version: 0.2.0
+Date: 2021-07-29
+Version: 0.3.1
 Authors@R: c( 
   person("Larry", "Helgason", email = "larry@helgasoft.com", role = c("aut", "cre", "cph")),
   person("John", "Coene", email = "jcoenep@gmail.com", role = c("aut", "cph"))
@@ -21,6 +21,6 @@ BugReports: https://github.com/helgasoft/echarty/issues/
 Encoding: UTF-8
 Language: en-US
 NeedsCompilation: no
-Packaged: 2021-06-13 06:11:14 UTC; gugu
+Packaged: 2021-07-30 01:38:51 UTC; gugu
 Repository: CRAN
-Date/Publication: 2021-06-13 06:40:02 UTC
+Date/Publication: 2021-07-30 04:40:02 UTC

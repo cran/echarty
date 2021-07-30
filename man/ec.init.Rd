@@ -6,49 +6,46 @@
 \usage{
 ec.init(
   df = NULL,
-  group1 = "scatter",
   preset = TRUE,
+  group1 = "scatter",
   load = NULL,
-  js = NULL,
+  tl.series = NULL,
   width = NULL,
   height = NULL,
-  elementId = NULL,
-  renderer = "canvas",
   ...
 )
 }
 \arguments{
 \item{df}{A data.frame to be preset as \href{https://echarts.apache.org/en/option.html#dataset}{dataset}, default NULL \cr
-For crosstalk df should be of type \code{\link[crosstalk]{SharedData}}.}
+For crosstalk df should be of type \code{\link[crosstalk]{SharedData}}.\cr
+Timeline requires a \emph{grouped data.frame} to build its \href{https://echarts.apache.org/en/option.html#options}{options}.}
+
+\item{preset}{Disable(FALSE) or enable (TRUE, default) presets xAxis,yAxis,serie for 2D, or grid3D,xAxis3D,yAxis3D,zAxis3D for 3D.}
 
 \item{group1}{Type of grouped series, or type of first ungrouped serie. Default is 'scatter'. Set to NULL to disable. \cr
 If the grouping is on multiple columns, only the first one is used.}
 
-\item{preset}{Disable(FALSE) or enable (TRUE, default) presets xAxis,yAxis,serie for 2D, or grid3D,xAxis3D,yAxis3D,zAxis3D for 3D.}
+\item{load}{Name(s) of plugin(s) to load. Could be a character vector or comma-delimited string. default NULL.\cr}
 
-\item{load}{Name(s) of plugin(s) to load. Could be a character vector or comma-delimited string. default NULL.\cr
-Built-in plugins: \cr \itemize{
-\item leaflet - Leaflet maps with customizable tiles, see \href{https://github.com/gnijuohz/echarts-leaflet#readme}{source}\cr
-\item custom - renderers for \link{ecr.band} and \link{ecr.ebars} \cr
-} Plugins with one-time installation (popup prompt): \cr \itemize{
-\item 3D - 3D charts and WebGL acceleration, see \href{https://github.com/ecomfe/echarts-gl}{source} and \href{https://echarts.apache.org/en/option-gl.html#series}{docs} \cr
-\item world - world map with country boundaries, see \href{https://github.com/apache/echarts/tree/master/test/data/map/js}{source} \cr
-\item liquid - liquid fill, see \href{https://github.com/ecomfe/echarts-liquidfill}{source}  \cr
-\item gmodular - graph modularity, see \href{https://github.com/ecomfe/echarts-graph-modularity}{source}  \cr
-\item wordcloud - cloud of words, see \href{https://github.com/ecomfe/echarts-wordcloud}{source} \cr
-} Install you own plugins with \link{ec.plugjs}.}
-
-\item{js}{A Javascript expression to evaluate, default NULL.}
+\item{tl.series}{A list to build a timeline or NULL(default). The list defines options \href{https://echarts.apache.org/en/option.html#series}{series} and their attributes. \cr
+The only required attribute is \href{https://echarts.apache.org/en/option.html#series-line.encode}{encode}.
+\emph{encode} defines which data columns names(not indexes) to use for axes X and Y: \cr
+Set \emph{x} and \emph{y} when coordinateSystem is \emph{'cartesian2d'}, \cr
+Set \emph{lng} and \emph{lat} when coordinateSystem is \emph{'geo'}, \cr
+Set \emph{radius} and \emph{angle} when coordinateSystem is \emph{'polar'}.\cr
+Attribute \emph{coordinateSystem} is set to \emph{'cartesian2d'} by default. Auto-generated \emph{timeline} and \emph{options} will be preset for the chart as well.}
 
 \item{width, height}{A valid CSS unit (like \code{'100\%'},
 \code{'500px'}, \code{'auto'}) or a number, which will be coerced to a
 string and have \code{'px'} appended.}
 
-\item{elementId}{Id of the widget, default NULL}
-
-\item{renderer}{\code{'canvas'} (default) or \code{'svg'}.}
-
-\item{...}{Any other arguments to pass to the widget.}
+\item{...}{other arguments to pass to the widget. \cr
+Custom widget arguments include: \cr \itemize{
+\item js - a string with a Javascript expression to evaluate
+\item renderer - 'canvas'(default) or 'svg'
+\item elementId - Id of the widget, default is NULL(auto-generated)
+\item ask - the \emph{plugjs} parameter when \emph{load} is present, TRUE or FALSE(default)
+}}
 }
 \value{
 A widget to plot, or to save and expand with more features.
@@ -61,10 +58,34 @@ Command \emph{ec.init} creates a widget with \code{\link[htmlwidgets]{createWidg
 When \emph{ec.init} is chained after a data.frame, a \href{https://echarts.apache.org/en/option.html#dataset}{dataset} is preset. \cr
 When the data.frame is grouped and \emph{group1} is not null, more datasets with legend and series are also preset. Grouped series are preset as type \emph{scatter}. \cr
 Plugin '3D' presets will not work for 'scatterGL'. Instead, use \emph{preset=FALSE} and set explicitly \emph{xAxis,yAxis}. \cr
+Plugins 'leaflet' and 'world' preset zoom=6 and center to the mean of all coordinates. \cr
 Users can delete or overwrite any presets as needed. \cr
+\link{ec.plugjs} will be called internally for each \emph{load} entry, popup prompts controlled by parameter \emph{ask}. \cr
+Built-in plugins: \cr \itemize{
+\item leaflet - Leaflet maps with customizable tiles, see \href{https://github.com/gnijuohz/echarts-leaflet#readme}{source}\cr
+\item custom - renderers for \link{ecr.band} and \link{ecr.ebars} \cr
+} Plugins with one-time installation: \cr \itemize{
+\item 3D - 3D charts and WebGL acceleration, see \href{https://github.com/ecomfe/echarts-gl}{source} and \href{https://echarts.apache.org/en/option-gl.html#series}{docs} \cr
+\item world - world map with country boundaries, see \href{https://github.com/apache/echarts/tree/master/test/data/map/js}{source} \cr
+\item liquid - liquid fill, see \href{https://github.com/ecomfe/echarts-liquidfill}{source}  \cr
+\item gmodular - graph modularity, see \href{https://github.com/ecomfe/echarts-graph-modularity}{source}  \cr
+\item wordcloud - cloud of words, see \href{https://github.com/ecomfe/echarts-wordcloud}{source} \cr
+} or install you own third-party plugins.
+Parameter 'js' accepts a vector of one or two strings. The first one is executed before chart initialization, the second - after. Chart object 'opts' is exposed in the second script.
 }
 \examples{
  # basic scatter chart from a data.frame, using presets
- cars \%>\% ec.init()
+cars \%>\% ec.init()
  
+ # a timeline with two series and autoPlay
+p <- iris \%>\% dplyr::group_by(Species) \%>\% ec.init(
+  tl.series=list(
+    encode=list(x=NULL, y=c('Sepal.Width', 'Petal.Length')),
+    markPoint = list(data=list(list(type='max'), list(type='min')))
+  )
+)
+p$x$opts$timeline <- append(p$x$opts$timeline, list(autoPlay=TRUE))
+p$x$opts$legend <- list(list())  # add legend
+p
+
 }
