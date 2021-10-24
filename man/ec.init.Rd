@@ -7,7 +7,7 @@
 ec.init(
   df = NULL,
   preset = TRUE,
-  group1 = "scatter",
+  ctype = "scatter",
   load = NULL,
   tl.series = NULL,
   width = NULL,
@@ -20,19 +20,20 @@ ec.init(
 For crosstalk df should be of type \code{\link[crosstalk]{SharedData}}.\cr
 Timeline requires a \emph{grouped data.frame} to build its \href{https://echarts.apache.org/en/option.html#options}{options}.}
 
-\item{preset}{Disable(FALSE) or enable (TRUE, default) presets xAxis,yAxis,serie for 2D, or grid3D,xAxis3D,yAxis3D,zAxis3D for 3D.}
+\item{preset}{Build presets xAxis,yAxis,serie for 2D, or grid3D,xAxis3D,yAxis3D,zAxis3D for 3D, default TRUE (enable).}
 
-\item{group1}{Type of grouped series, or type of first ungrouped serie. Default is 'scatter'. Set to NULL to disable. \cr
+\item{ctype}{Chart type of series. Default is 'scatter'. Set to NULL to disable series preset. \cr
 If the grouping is on multiple columns, only the first one is used.}
 
-\item{load}{Name(s) of plugin(s) to load. Could be a character vector or comma-delimited string. default NULL.\cr}
+\item{load}{Name(s) of plugin(s) to load. Could be a character vector or comma-delimited string. default NULL.}
 
 \item{tl.series}{A list to build a timeline or NULL(default). The list defines options \href{https://echarts.apache.org/en/option.html#series}{series} and their attributes. \cr
 The only required attribute is \href{https://echarts.apache.org/en/option.html#series-line.encode}{encode}.
-\emph{encode} defines which data columns names(not indexes) to use for axes X and Y: \cr
-Set \emph{x} and \emph{y} when coordinateSystem is \emph{'cartesian2d'}, \cr
-Set \emph{lng} and \emph{lat} when coordinateSystem is \emph{'geo'}, \cr
-Set \emph{radius} and \emph{angle} when coordinateSystem is \emph{'polar'}.\cr
+\emph{encode} defines which data columns names(not indexes) to use for the axes: \itemize{
+\item set \emph{x} and \emph{y} when coordinateSystem is \emph{'cartesian2d'}
+\item set \emph{lng} and \emph{lat} when coordinateSystem is \emph{'geo'}
+\item set \emph{radius} and \emph{angle} when coordinateSystem is \emph{'polar'}
+}
 Attribute \emph{coordinateSystem} is set to \emph{'cartesian2d'} by default. Auto-generated \emph{timeline} and \emph{options} will be preset for the chart as well.}
 
 \item{width, height}{A valid CSS unit (like \code{'100\%'},
@@ -41,10 +42,15 @@ string and have \code{'px'} appended.}
 
 \item{...}{other arguments to pass to the widget. \cr
 Custom widget arguments include: \cr \itemize{
-\item js - a string with a Javascript expression to evaluate
-\item renderer - 'canvas'(default) or 'svg'
 \item elementId - Id of the widget, default is NULL(auto-generated)
-\item ask - the \emph{plugjs} parameter when \emph{load} is present, TRUE or FALSE(default)
+\item ask - the \emph{plugjs} parameter when \emph{load} is present, FALSE by default
+\item js - single string or a vector with JavaScript expressions to evaluate.\cr
+First expression is evaluated before chart initialization. \cr
+Second is evaluated with an exposed object \emph{opts}. \cr
+Third is evaluated with an exposed object \emph{chart} after \emph{opts} have been set.
+\item renderer - 'canvas'(default) or 'svg'
+\item locale - 'EN'(default) or 'ZH' or other, see \href{https://echarts.apache.org/en/api.html#echarts.init}{here}
+\item useDirtyRect - enable dirty rectangle rendering or not, FALSE by default, see \href{https://echarts.apache.org/en/api.html#echarts.init}{here}
 }}
 }
 \value{
@@ -56,7 +62,7 @@ Required to build a chart. In most cases this will be the only command necessary
 \details{
 Command \emph{ec.init} creates a widget with \code{\link[htmlwidgets]{createWidget}}, then adds some ECharts features to it.\cr
 When \emph{ec.init} is chained after a data.frame, a \href{https://echarts.apache.org/en/option.html#dataset}{dataset} is preset. \cr
-When the data.frame is grouped and \emph{group1} is not null, more datasets with legend and series are also preset. Grouped series are preset as type \emph{scatter}. \cr
+When the data.frame is grouped and \emph{ctype} is not null, more datasets with legend and series are also preset. Grouped series are preset as type \emph{scatter}. \cr
 Plugin '3D' presets will not work for 'scatterGL'. Instead, use \emph{preset=FALSE} and set explicitly \emph{xAxis,yAxis}. \cr
 Plugins 'leaflet' and 'world' preset zoom=6 and center to the mean of all coordinates. \cr
 Users can delete or overwrite any presets as needed. \cr
@@ -71,7 +77,6 @@ Built-in plugins: \cr \itemize{
 \item gmodular - graph modularity, see \href{https://github.com/ecomfe/echarts-graph-modularity}{source}  \cr
 \item wordcloud - cloud of words, see \href{https://github.com/ecomfe/echarts-wordcloud}{source} \cr
 } or install you own third-party plugins.
-Parameter 'js' accepts a vector of one or two strings. The first one is executed before chart initialization, the second - after. Chart object 'opts' is exposed in the second script.
 }
 \examples{
  # basic scatter chart from a data.frame, using presets

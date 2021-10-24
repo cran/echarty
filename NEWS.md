@@ -1,5 +1,30 @@
 # history of echarty package development
 
+## v.1.4.0
+
+- _ec.init_: renamed 'group1' to 'ctype', add presets for parallel chart, improved presets for xAxis
+- _ec.paxis_ new helper for parallelAxis
+- _ec.clmn_ placeholders %d %s replaced with %@
+- added initial unit tests
+
+## v. 0.3.2
+
+- _ec.init_: _js_ parameter has now 3 levels of execution
+- _ec.clmn_: fix order of parameters, add message for missing data
+- _eshiny_ demo: button and code added to modify series
+
+## v. 0.3.1.3
+
+- _ec.init_: fix '3D' presets for groups and 'world' presets
+- _ec.clmn_: added new parameter _scale_
+- _echarty.js_ add resize parameter [resizeOpts](https://echarts.apache.org/en/api.html#echartsInstance.resize)
+- updates to examples.R
+- upgrade ECharts to v.5.2.1, liquidfill to v.3.1.0
+
+## v. 0.3.1.2
+
+- _ec.init_ added ECharts parameters _locale_ and _useDirtyRect_
+
 ## v. 0.3.1
 
 - _ec.init_ param _timeline_ renamed to _tl.series_

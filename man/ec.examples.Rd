@@ -96,11 +96,24 @@ p
 
 
 #------ Plugin leaflet
-tmp <- quakes \%>\% dplyr::relocate('long')  # set in lon,lat order
+tmp <- quakes \%>\% dplyr::relocate('long') \%>\%  # set order to lon,lat
+  dplyr::mutate(size= exp(mag)/20)             # add accented size
 p <- tmp \%>\% ec.init(load='leaflet')
-p$x$opts$legend = list(data=list(list(name='quakes')))
 p$x$opts$series[[1]]$name = 'quakes'
-p$x$opts$series[[1]]$symbolSize = ec.clmn(4)
+p$x$opts$series[[1]]$symbolSize = ec.clmn(6, scale=2)   # size column
+p$x$opts$tooltip = list(formatter=ec.clmn('magnitude \%@', 'mag'))
+p$x$opts$legend = list(zz='')
+p
+
+
+#------ Plugin 'world' with visualMap
+cns <- data.frame(
+  country = c('United States','China','Russia','Brazil','Canada','Algeria','Sudan','Australia'),
+  value = runif(8, 1, 100) 
+)
+p <- cns \%>\% ec.init(load= 'world')
+p$x$opts$visualMap <- list(calculable= TRUE, max= 100)
+p$x$opts$toolbox <- list(feature= list(restore= list()))
 p
 
 
@@ -112,8 +125,9 @@ if (!is.null(flights)) {
   tmp <- data.frame(airport1 = unique(head(flights,10)$airport1),
                     color = c("#387e78","#eeb422","#d9534f",'magenta'))
   tmp <- head(flights,10) \%>\% inner_join(tmp)    # add color by airport
-  p <- tmp \%>\% ec.init(load='world')
-  p$x$opts$geo$center= c(mean(flights$start_lon), mean(flights$start_lat))
+  p <- ec.init(load='world')
+  p$x$opts$geo$center <- c(mean(flights$start_lon), mean(flights$start_lat))
+  p$x$opts$geo$zoom <- 7
   p$x$opts$series <- list(list(
     type='lines', coordinateSystem='geo',
     data = lapply(ec.data(tmp, 'names'), function(x)
@@ -125,6 +139,21 @@ if (!is.null(flights)) {
   ))
   p
 }
+
+
+#------ registerMap JSON
+json <- jsonlite::read_json("https://echarts.apache.org/examples/data/asset/geo/USA.json")
+dusa <- USArrests \%>\% mutate(states = row.names(.))
+p <- ec.init(preset=FALSE)
+p$x$registerMap <- list(list(mapName= 'USA', geoJSON= json))
+#   registerMap supports also maps in SVG format, see website gallery
+p$x$opts$visualMap <- list(type= 'continuous', calculable= TRUE, 
+                           min= min(dusa$UrbanPop), max= max(dusa$UrbanPop))
+p$x$opts$series <- list(list(type= 'map', map= 'USA', 
+   roam= TRUE, zoom= 3, left= -100, top= -30,
+   data= lapply(ec.data(dusa,'names'), function(x) list(name=x$states, value=x$UrbanPop))
+))
+p
 
 
 #------ Plugin 3D
@@ -142,16 +171,18 @@ if (interactive()) {
 if (interactive()) {
 df <- data.frame(Species = unique(iris$Species),
                  color = c("#387e78","#eeb422","#d9534f"))
-df <- iris \%>\% dplyr::inner_join(df)   # add 6th column 'color' for Species
-p <- df \%>\% ec.init(load = '3D')
+df <- iris \%>\% dplyr::inner_join(df) \%>\%   # add 6th column 'color' for Species
+      mutate(size= log(Petal.Width*10))    # add 7th accented size
+p <- df \%>\% ec.init(load= '3D')
 p$x$opts$xAxis3D <- list(name='Petal.Length')
 p$x$opts$yAxis3D <- list(name='Sepal.Width')
 p$x$opts$zAxis3D <- list(name='Sepal.Length')
-p$x$opts$series <- list(list(
-  type='scatter3D', symbolSize=7,
+p$x$opts$series <- list(list( name='Iris in 3D',
+  type='scatter3D', symbolSize=ec.clmn(7, scale=10), 
   encode=list(x='Petal.Length', y='Sepal.Width', z='Sepal.Length'),
-  itemStyle=list(color = ec.clmn(6) )  # index of column 'color'
+  itemStyle=list(color = ec.clmn(6) )      # index of column 'color'
 ))
+p$x$opts$legend <- list(ii='')
 p
 }
 
@@ -202,7 +233,7 @@ p$x$opts$series = append(
             #encode=list(x='day', y='CAC')   # *2
   ))
 )
-p$x$opts$legend <- list(ey='') 
+p$x$opts$legend <- list(zz='') 
 p$x$opts$dataZoom <- list(type='slider', end=50)
 p
 
@@ -220,14 +251,19 @@ p
 
 
 #------ Boxplot
-bdf <- data.frame(vx = sample(LETTERS[1:3], size=20, replace=TRUE), 
-                  vy = rnorm(20)) \%>\% group_by(vx) \%>\% group_split()
-dats <- lapply(bdf, function(x) boxplot.stats(x$vy)$stats )
+library(dplyr)
+bdf <- data.frame(vx= sample(LETTERS[1:3], size= 20, replace= TRUE), 
+		     vy= rnorm(20)) \%>\% group_by(vx) \%>\% group_split()
+dats <- lapply(bdf, function(x) round(boxplot.stats(x$vy)$stats, 4) )
 p <- ec.init()
 p$x$opts <- list(     # overwrite presets
-  xAxis = list(ey=''),
-  yAxis = list(type = 'category', data = unique(unlist(lapply(bdf, `[`, , 1))) ),
-  series = list(list(type = 'boxplot', data = dats))
+	xAxis = list(zz=''),
+	yAxis = list(type = 'category', data= unique(unlist(lapply(bdf, `[`, , 1))) ),
+	series = list(list(type= 'boxplot', data= dats, 
+			itemStyle= list(color= '#b8c5f2'),
+			encode= list(tooltip= c('min', 'Q1', 'median', 'Q3', 'max'))
+))
+	,tooltip = list(trigger= 'item')
 )
 p
 
@@ -251,9 +287,9 @@ datset <- list(
     list('Jasmin Krause', 52, 'Musician', 287, '2011-02-14'),
     list('Li Lei', 37, 'Teacher', 219, '2011-02-18'),
     list('Karle Neumann', 25, 'Engineer', 253, '2011-04-02'),
-    list('Adrian GroÃŸ', 19, 'Teacher', NULL, '2011-01-16'),
+    list('Adrian Groß', 19, 'Teacher', NULL, '2011-01-16'),
     list('Mia Neumann', 71, 'Engineer', 165, '2011-03-19'),
-    list('BÃ¶hm Fuchs', 36, 'Musician', 318, '2011-02-24'),
+    list('Böhm Fuchs', 36, 'Musician', 318, '2011-02-24'),
     list('Han Meimei', 67, 'Engineer', 366, '2011-03-12'))),
   list(transform = list(type= 'sort', config=list(
     list(dimension='profession', order='desc'),
@@ -306,31 +342,15 @@ p$x$opts <- list(
 p
 
 
-#------ registerMap JSON
-json <- jsonlite::read_json("https://echarts.apache.org/examples/data/asset/geo/USA.json")
-dusa <- USArrests \%>\% dplyr::mutate(states = row.names(.))
-p <- ec.init(preset=FALSE)
-p$x$registerMap <- list(list(mapName = 'USA', geoJSON = json))
-# registerMap supports also maps in SVG format, see website gallery
-p$x$opts <- list(
-  visualMap = list(type='continuous', calculable=TRUE, 
-                   min=min(dusa$UrbanPop), max=max(dusa$UrbanPop))
-  ,series = list( list(type='map', map='USA', name='UrbanPop', roam=TRUE,
-       data = lapply(ec.data(dusa,'names'), function(x) list(name=x$states, value=x$UrbanPop))
-   ))
-)
-p  
-
-
 #------ Error Bars on grouped data
 library(dplyr)
 df <- mtcars \%>\% group_by(cyl,gear) \%>\% summarise(yy=round(mean(mpg),2)) \%>\%
   mutate(low=round(yy-cyl*runif(1),2), high=round(yy+cyl*runif(1),2)) \%>\%
   relocate(cyl, .after = last_col())   # move group column behind first four cols
-p <- df \%>\% ec.init(group1='bar', load='custom') \%>\%
+p <- df \%>\% ec.init(ctype='bar', load='custom') \%>\%
   ecr.ebars(df, name = 'eb'
-     ,tooltip = list(formatter=ec.clmn('high <b>\%d</b><br>low <b>\%d</b>', 4,3)))
-p$x$opts$tooltip <- list(ey='')
+     ,tooltip = list(formatter=ec.clmn('high <b>\%@</b><br>low <b>\%@</b>', 4,3)))
+p$x$opts$tooltip <- list(zz='')
 p
 
 
