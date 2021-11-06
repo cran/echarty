@@ -105,15 +105,6 @@ ec.init <- function( df=NULL, preset=TRUE, ctype='scatter', load=NULL,
     }
   }
 
-  if (requireNamespace("crosstalk", quietly = TRUE)) {  # replaced ' @importFrom crosstalk is.SharedData crosstalkLibs
-    if (crosstalk::is.SharedData(data)) {
-      crosstalkKey <- as.list(data$key())
-      crosstalkGroup <- data$groupName()
-      data <- data$origData()
-      dependencies <- crosstalk::crosstalkLibs()
-    }
-  }
-
   key <- group <- deps <- NULL
   if (requireNamespace("crosstalk", quietly = TRUE)) {
     if (crosstalk::is.SharedData(df)) {

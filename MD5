@@ -1,14 +1,13 @@
-606178390481ee5b1fe75efc4cd01b64 *DESCRIPTION
+ba27134e13a3f78604d9fbfbe62471cc *DESCRIPTION
 5dc476376564062434838229b2778888 *NAMESPACE
 12a08d70eb398d890d1764d55d37517f *NEWS.md
-58dce2e65648eb5f9e05358b32cca16a *R/echarty.R
+577c49ebe16a76f08f5997fd8bb0332d *R/echarty.R
 364053057ea275394c6b4c5695410129 *R/examples.R
 9a89cb3df4682b19977194a7d7e26de0 *demo/00Index
 16d4f94afa1a1ffb0f8183f485b95b1c *demo/eshiny.R
 0aea9f25a3fd5e5398230a9ed05d6562 *demo/js2r.R
 70e5108519ee3f830a26d1c70f2bb51d *inst/htmlwidgets/echarty.js
 3ca2524bac4c5aae5c2ded25ac698df3 *inst/htmlwidgets/echarty.yaml
-a58b2aae90c3f2f072a863e3d50c5f0a *inst/js/china-contour.js
 495bdb3133839f35540cc037a40063ee *inst/js/dataTool.min.js
 4d040284130eda3ad8b586aab6402350 *inst/js/ecStat.min.js
 ac557efa93e40e9da47754e036153509 *inst/js/echarts-leaflet.js
