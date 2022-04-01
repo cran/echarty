@@ -7,35 +7,40 @@
 ec.clmn(col = NULL, ..., scale = 1)
 }
 \arguments{
-\item{col}{A single column index(number) or column name(string), \cr
-or a \code{\link[base]{sprintf}} format string.}
+\item{col}{A single column index(number) or column name(quoted string), \cr
+or a \link[base]{sprintf} format string.}
 
-\item{...}{Only when \emph{col} is \emph{sprintf}: comma separated column indexes or names(strings), but not both.  This allows formatting of multiple columns, as for a tooltip.}
+\item{...}{A comma separated column indexes or names, only when \emph{col} is \emph{sprintf}. This allows formatting of multiple columns, as for a tooltip.\cr}
 
-\item{scale}{Only when \emph{col} is a single column index or name: a multiplier number for column values.}
+\item{scale}{A positive number, multiplier for numeric columns. When scale is 0, all numeric values are rounded.}
 }
 \value{
-A JavaScript code string (usually a function) marked as executable, see \code{\link[htmlwidgets]{JS}}.
+A JavaScript code string (usually a function) marked as executable, see \link[htmlwidgets]{JS}.
 }
 \description{
-Helper function to address data column(s) by index or name
+Helper function to display/format data column(s) by index or name
 }
 \details{
 Column indexes are counted in R and start at 1.\cr
+Set column index to -1 for single values, like \emph{tree} chart, \emph{axisLabel.formatter} or \emph{valueFormatter}.\cr
+Column indexes are decimals for combo charts with multiple series, see \link{ecr.band} example. The whole number part is the serie index, the decimal part is the column index inside.
 \emph{col} as sprintf has the same placeholder \emph{\%@} for both column indexes or column names.\cr
 \emph{col} as sprintf can contain double quotes, but not single or backquotes.\cr
+Placeholder \emph{\%L@} will display a number in locale format, like '12,345.09'.\cr
+Placeholder \emph{\%LR@} will display a rounded number in locale format, like '12,345'.\cr
+Placeholder \emph{\%R@} will display a rounded number, like '12345'.\cr
+Placeholder \emph{\%M@} will display a marker in serie's color.\cr
 Useful for attributes like formatter, color, symbolSize.
 }
 \examples{
 tmp <- data.frame(Species = as.vector(unique(iris$Species)),
                   emoji = c('\U0001F33B','\U0001F335','\U0001F33A'))
-df <- iris |> dplyr::inner_join(tmp)   # add 6th column 'emoji'
+df <- iris |> dplyr::inner_join(tmp)         # add 6th column emoji
 p <- df |> dplyr::group_by(Species) |> ec.init()
-p$x$opts$series <- list(list(
-  type='scatter', label=list(show=TRUE, formatter = ec.clmn(6))  # ref 6th column
-))
-p$x$opts$tooltip <- list(formatter=          # sprintf + ref multiple columns
-   ec.clmn('species <b>\%@</b><br>s.len <b>\%@</b><br>s.wid <b>\%@</b>', 5,1,2))
+p$x$opts$series <- lapply(p$x$opts$series,   # show 6th column as label
+   function(s) append(s, list(label= list(show= TRUE, formatter= ec.clmn(6)))) )
+p$x$opts$tooltip <- list(formatter=     # sprintf + multiple column indexes
+   ec.clmn('\%M@ species <b>\%@</b><br>s.len <b>\%@</b><br>s.wid <b>\%@</b>', 5,1,2))
 p
 
 }

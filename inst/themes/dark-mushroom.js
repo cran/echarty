@@ -55,9 +55,7 @@
                 }
             },
             axisLabel: {
-                textStyle: {
-                    color: contrastColor
-                }
+                color: contrastColor
             },
             splitLine: {
                 lineStyle: {
@@ -74,14 +72,8 @@
     };
 
     var colorPalette = [
-        '#cc0e00',
-        '#ff1a0a',
-        '#ff8880',
-        '#ffc180',
-        '#ffc2b0',
-        '#ffffff',
-        '#ff8880',
-        '#ffe6e6'
+    	//'#cc0e00','#ff1a0a','#ff8880','#ffc180','#ffc2b0','#ffffff','#ff8880','#ffe6e6'  //old
+        '#d73027','#f46d43','#fdae61','#fee08b','#d9ef8b','#a6d96a','#66bd63','#1a9850'
     ];
     var theme = {
         color: colorPalette,
@@ -94,7 +86,9 @@
                 crossStyle: {
                     color: contrastColor
                 }
-            }
+            },
+            textStyle: { color: contrastColor },
+            backgroundColor: '#888888bb'
         },
         legend: {
             textStyle: {
@@ -123,7 +117,7 @@
 
         timeline: {
             itemStyle: {
-                color: colorPalette[1]
+                color: '#aaa' //colorPalette[1]
             },
             lineStyle: {
                 color: contrastColor
@@ -141,7 +135,12 @@
         logAxis: axisCommon(),
         valueAxis: axisCommon(),
         categoryAxis: axisCommon(),
-
+        
+	timeAxis3D: axisCommon(),
+	logAxis3D: axisCommon(),
+	valueAxis3D: axisCommon(),
+	categoryAxis3D: axisCommon(),
+    
         line: {
             symbol: 'circle'
         },

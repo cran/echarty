@@ -7,7 +7,7 @@
 ecr.ebars(wt, df = NULL, hwidth = 6, ...)
 }
 \arguments{
-\item{wt}{A widget to add error bars to, see \code{\link[htmlwidgets]{createWidget}}}
+\item{wt}{A widget to add error bars to, see \link[htmlwidgets]{createWidget}}
 
 \item{df}{NULL(default) or data.frame with four or more columns ordered exactly (x,y,low,high,others).
 When NULL, data is taken from wt's dataset where order should be the same (x,y,low,high,etc)}
@@ -23,11 +23,11 @@ A widget with error bars added if successful, otherwise the input wt
 Custom series to display error-bars for scatter,bar or line series
 }
 \details{
-Grouped series are supported, but require the group column to be included in df. \cr
-ecr.ebars are custom series, so \emph{ec.init(load='custom')} is required. \cr
-ecr.ebars will add a chart legend and its own tooltip if none is provided.\cr
-ecr.ebars with name attribute will show separate in the legend \cr
-ecr.ebars should be set at the end, after all other series.
+\emph{ecr.ebars} are custom series, so \emph{ec.init(load='custom')} is required. \cr
+Grouped series are supported, but require the group column to be included in \emph{df}. \cr
+Will add a chart legend and its own tooltip if none is provided.\cr
+ecr.ebars with name attribute will show separate in the legend. \cr
+Command should be called last, after all other series.
 }
 \examples{
 if (interactive()) {
@@ -37,7 +37,7 @@ df <- data.frame(x = 1:24, val = tmp,
                  upper = round(rnorm(24, tmp + 5, .8))
 )
 p <- df |> ec.init(load='custom') |> ecr.ebars()
-p$x$opts$tooltip <- list(ii='')
+p$x$opts$tooltip <- list(show=TRUE)
 p
 }
 }

@@ -18,13 +18,14 @@ ec.layout(plots, rows = NULL, cols = NULL, width = "xs", title = NULL)
 \item{title}{Title for the set}
 }
 \value{
-A container \code{\link[htmltools]{div}} in rmarkdown, otherwise \code{\link[htmltools]{browsable}}
+A container \link[htmltools]{div} in rmarkdown, otherwise \link[htmltools]{browsable}
 }
 \description{
 Set multiple charts in rows/columns format
 }
 \details{
-For 3-4 charts one would use multiple series with a \href{https://echarts.apache.org/en/option.html#grid}{grid}. For greater number of charts \emph{ec.layout} come in handy.
+For 3-4 charts one would use multiple series with a \href{https://echarts.apache.org/en/option.html#grid}{grid}. \cr
+For greater number of charts \emph{ec.layout} come in handy.
 }
 \examples{
 options(browser = 'firefox')

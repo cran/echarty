@@ -7,22 +7,66 @@
 ec.data(df, format = "dataset", header = TRUE)
 }
 \arguments{
-\item{df}{Chart data in data.frame format, required.}
+\item{df}{Chart data in data.frame format, required. \cr
+Except when format is 'dendrogram', then df is a list, result of \link[stats]{hclust} function.}
 
 \item{format}{A key on how to format the output list \cr \itemize{
-\item 'dataset' = list to be used in \href{https://echarts.apache.org/en/option.html#dataset.source}{dataset} (default), or in \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} but without a header. \cr
+\item 'dataset' = list to be used in \href{https://echarts.apache.org/en/option.html#dataset.source}{dataset} (default), or in \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} (without header). \cr
 \item 'values' = list for customized \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} \cr
 \item 'names' = named lists useful for named data like \href{https://echarts.apache.org/en/option.html#series-sankey.links}{sankey links}.
+\item 'boxplot' = build dataset and source lists, see Details
+\item 'dendrogram' = build series data for Hierarchical Clustering dendrogram
 }}
 
-\item{header}{Boolean to include the column names header or not, default TRUE.
+\item{header}{Boolean to include the column names in dataset, default TRUE.\cr
 Set this to FALSE when used in \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data}.}
 }
 \value{
-A list for \emph{dataset.source}, \emph{series.data} or a list of named lists.
+A list for \emph{dataset.source}, \emph{series.data} or a list of named lists.\cr
+For boxplot - a named list, see Details and Examples \cr
+For dendrogram - a tree structure, see format in \href{https://echarts.apache.org/en/option.html#series-tree.data}{tree data}
 }
 \description{
 Make data lists from a data.frame
+}
+\details{
+\code{format='boxplot'} requires the first two \emph{df} columns as: \itemize{
+\item column for the non-computational categorical axis
+\item column with (numeric) data to compute the five boxplot values
+}
+Grouped \emph{df} is supported. Groups will show in the legend, if enabled.\cr
+Returns a \code{list(dataset, series, axlbl)} to set the chart. \emph{axlbl} is a formatter for the category axis.\cr
+Make sure there is enough data for computation, like >4 values per boxplot. Otherwise ECharts may exit with a \emph{Object.transform} error.
+}
+\examples{
+library(dplyr)
+#ds <- Orange |> relocate(age,circumference) |> ec.data(format='boxplot')
+#ds <- Orange |> relocate(age,circumference) |> group_by(Tree) |> ec.data(format='boxplot')
+#ds <- mtcars |> relocate(am,mpg) |> ec.data(format='boxplot')
+ ds <- mtcars |> relocate(am,mpg) |> group_by(cyl) |> ec.data(format='boxplot')
+p <- ec.init()
+p$x$opts <- list(
+  dataset= ds$dataset, 
+  series=  ds$series, 
+  yAxis= list(type= 'category',  # categorical yAxis = horizontal boxplots 
+              axisLabel= list(formatter= ds$axlbl)),
+  xAxis= list(show= TRUE),       # categorical xAxis = vertical boxplots 
+  legend= list(show= TRUE)
+)
+p 
+
+hc <- hclust(dist(USArrests), "complete")
+p <- ec.init(preset= FALSE)
+p$x$opts$series <- list(list(
+  type= 'tree', orient= 'TB', roam= TRUE, initialTreeDepth= -1,
+  data= ec.data(hc, format='dendrogram'),
+  # layout= 'radial', symbolSize= ec.clmn(-1, scale= 0.33),
+  #    exclude added labels like 'pXX', leaving only the originals
+  label= list(formatter= htmlwidgets::JS(
+    "function(n) { out= /p\\\\d+/.test(n.name) ? '' : n.name; return out;}"))
+))
+p
+
 }
 \seealso{
 some live \href{https://rpubs.com/echarty/data-models}{code samples}

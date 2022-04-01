@@ -13,7 +13,7 @@ ec.inspect(wt, target = NULL, json = TRUE, ...)
 
 \item{json}{Boolean whether to return a JSON, or a \code{list}, default TRUE}
 
-\item{...}{Additional arguments to pass to \code{\link[jsonlite]{toJSON}}}
+\item{...}{Additional arguments to pass to \link[jsonlite]{toJSON}}
 }
 \value{
 A JSON string if \code{json} is \code{TRUE} and
@@ -23,7 +23,8 @@ a \code{list} otherwise.
 Convert chart to JSON string
 }
 \note{
-Must be invoked or chained as last command.
+Must be invoked or chained as last command.\cr
+ec.inspect is incompatible with \link{ec.snip}
 }
 \examples{
 # extract JSON
