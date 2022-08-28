@@ -10,8 +10,10 @@ Deliver the full functionality of 'ECharts' with minimal overhead. 'echarty' use
 }
 \section{Package Conventions}{
 
-echarty is "pipe-friendly", supports both \%>\% and |> \cr
-echarty functions have three prefixes to help with auto-completion: \cr
+\enumerate{
+\item pipe-friendly - supports both \%>\% and |> \cr
+\item functions have three prefixes to help with auto-completion: \cr
+}
 \itemize{
 \item \emph{ec.} for general functions, like \link{ec.data}
 \item \emph{ecs.} for Shiny functions, like \link{ecs.output}
@@ -24,10 +26,9 @@ echarty functions have three prefixes to help with auto-completion: \cr
 Options are set with R command \href{https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/options}{options}.\cr
 echarty uses the following options: \cr
 \itemize{
-\item echarty.theme = name of theme file (without extension), from folder /inst/themes
+\item echarty.theme = name of theme file, without extension, from folder /inst/themes
 \item echarty.font = font family name
 \item echarty.urltiles = tiles URL template for leaflet maps
-\item echarty.short = a boolean flag, see \link{ec.snip}
 }
 }
 
@@ -39,7 +40,7 @@ All other ECharts \href{https://echarts.apache.org/en/api.html#events}{events} s
 Another option is to use \code{p$x$on} with JavaScript handlers, see code in \link{ec.examples}.
 }
 
-\section{Widget parameters}{
+\section{Widget 'x' parameters}{
 
 These are \code{htmlwidget} and \code{ECharts} initialization parameters supported by echarty.\cr
 There are code samples for most in \link{ec.examples}.
@@ -62,10 +63,11 @@ Here is the complete list of sample code locations \cr
 \item \link{ec.examples}
 \item command examples, like in \link{ec.init}
 \item Shiny code is in \code{eshiny.R}, run with \code{demo(eshiny)}
-\item searchable \href{https://helgasoft.github.io/echarty/gallery.html}{gallery} and \href{https://helgasoft.github.io/echarty/}{tutorials} on website
+\item website \href{https://helgasoft.github.io/echarty/gallery.html}{gallery} and \href{https://helgasoft.github.io/echarty/}{tutorials}
 \item searchable \href{https://gist.github.com/helgasoft}{gists}
 \item demos on \href{https://rpubs.com/echarty}{RPubs}
 \item answers to \href{https://github.com/helgasoft/echarty/issues}{Github issues}
+\item code in \href{https://github.com/helgasoft/echarty/tree/main/tests/testthat}{Github tests}
 \cr
 }
 }
@@ -75,9 +77,9 @@ Here is the complete list of sample code locations \cr
 cars |> ec.init()
 
 # set/get global options
-options('echarty.short'=TRUE)  # set
-getOption('echarty.short')     # get
-options('echarty.short'=NULL)  # remove
+options('echarty.theme'='jazz') # set
+getOption('echarty.theme')      # get
+options('echarty.theme'=NULL)   # remove
 
 
 }
@@ -94,7 +96,7 @@ Useful links:
 
 Authors:
 \itemize{
-  \item John Coene \email{jcoenep@gmail.com} [copyright holder]
+  \item John Coene (echarts4r library) [copyright holder]
 }
 
 }

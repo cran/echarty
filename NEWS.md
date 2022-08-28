@@ -1,5 +1,27 @@
 # history of echarty package development
 
+## v.1.4.7
+
+- _ec.util_: add POLYGON/MULTIPOINT, rename param 'type' to 'cmd', new _sf.unzip_
+- _ec.util_: new cmd='tabset' to show multiple charts in tabs
+- _ec.util_: new cmd='layout' for multiple charts in table-like format
+- _ec.upd_ replaces _ec.snip_ for chained commands
+- improved _ec.data_ format='treeTK', see example in _test-other.R_
+- support for _lotties_ in _graphic_, see web gallery for sample
+- grouping column in 2D charts now could be at any position
+
+## v.1.4.6
+
+- upgrade ECharts to v.5.3.3
+- expand docs for _ec.init_
+- fix timeline _tl.series_ for candlestick,boxplot,pictorialBar
+- add custom attribute _groupBy_ for _tl.series_
+- add _riErrBarSimple_ renderer
+- new _ec.data_ formats 'treePC' and 'treeTK' for hierarchies
+- changed _ec.data_ default parameter _header_ to FALSE
+- fixes in _ec.clmn_ and allow empty _col_ parameter for pie,sunburst,etc.
+- add _ec.util_ to support map shapefiles thru library 'sf'
+
 ## v.1.4.5
 
 - upgrade ECharts to v.5.3.1, GL to v.2.0.9

@@ -4,7 +4,7 @@
 \alias{ec.data}
 \title{Data helper}
 \usage{
-ec.data(df, format = "dataset", header = TRUE)
+ec.data(df, format = "dataset", header = FALSE)
 }
 \arguments{
 \item{df}{Chart data in data.frame format, required. \cr
@@ -16,6 +16,8 @@ Except when format is 'dendrogram', then df is a list, result of \link[stats]{hc
 \item 'names' = named lists useful for named data like \href{https://echarts.apache.org/en/option.html#series-sankey.links}{sankey links}.
 \item 'boxplot' = build dataset and source lists, see Details
 \item 'dendrogram' = build series data for Hierarchical Clustering dendrogram
+\item 'treePC' = build series data for sunburst,tree,treemap from parent/children data.frame
+\item 'treeTK' = build series data for sunburst,tree,treemap from data.frame like Titanic. Supports column \emph{itemStyle}.
 }}
 
 \item{header}{Boolean to include the column names in dataset, default TRUE.\cr
@@ -24,7 +26,7 @@ Set this to FALSE when used in \href{https://echarts.apache.org/en/option.html#s
 \value{
 A list for \emph{dataset.source}, \emph{series.data} or a list of named lists.\cr
 For boxplot - a named list, see Details and Examples \cr
-For dendrogram - a tree structure, see format in \href{https://echarts.apache.org/en/option.html#series-tree.data}{tree data}
+For dendrogram & treePC - a tree structure, see format in \href{https://echarts.apache.org/en/option.html#series-tree.data}{tree data}
 }
 \description{
 Make data lists from a data.frame
@@ -35,37 +37,45 @@ Make data lists from a data.frame
 \item column with (numeric) data to compute the five boxplot values
 }
 Grouped \emph{df} is supported. Groups will show in the legend, if enabled.\cr
-Returns a \code{list(dataset, series, axlbl)} to set the chart. \emph{axlbl} is a formatter for the category axis.\cr
+Returns a \code{list(dataset, series, axlbl)} to set the chart. \emph{axlbl} is the category axis label list when data grouped.\cr
 Make sure there is enough data for computation, like >4 values per boxplot. Otherwise ECharts may exit with a \emph{Object.transform} error.
 }
 \examples{
 library(dplyr)
-#ds <- Orange |> relocate(age,circumference) |> ec.data(format='boxplot')
-#ds <- Orange |> relocate(age,circumference) |> group_by(Tree) |> ec.data(format='boxplot')
-#ds <- mtcars |> relocate(am,mpg) |> ec.data(format='boxplot')
- ds <- mtcars |> relocate(am,mpg) |> group_by(cyl) |> ec.data(format='boxplot')
-p <- ec.init()
-p$x$opts <- list(
-  dataset= ds$dataset, 
-  series=  ds$series, 
-  yAxis= list(type= 'category',  # categorical yAxis = horizontal boxplots 
-              axisLabel= list(formatter= ds$axlbl)),
-  xAxis= list(show= TRUE),       # categorical xAxis = vertical boxplots 
+variety <- rep(LETTERS[1:7], each=40)
+treatment <- rep(c("high","low"), each=20)
+note <- seq(1:280)+sample(1:150, 280, replace=TRUE)
+ds <- data.frame(variety, note, treatment) |> group_by(treatment) |> 
+        ec.data(format='boxplot')
+ec.init(
+  dataset= ds$dataset,
+  series=  ds$series,
+  yAxis= list(type= 'category',  # categorical yAxis = horizontal boxplots
+              axisLabel= ds$axlbl),
+  xAxis= list(show= TRUE),       # categorical xAxis = vertical boxplots
   legend= list(show= TRUE)
 )
-p 
+
+ds <- airquality |> mutate(Day=round(Day/10)) |> relocate(Day,Wind) |> ec.data(format='boxplot')
+ec.init(
+  dataset= ds$dataset, 
+  series= ds$series, 
+  yAxis= list(type= 'category'), 
+  xAxis= list(show= TRUE),
+  legend= list(show= TRUE) #, tooltip= list(show=TRUE)
+)  
 
 hc <- hclust(dist(USArrests), "complete")
-p <- ec.init(preset= FALSE)
-p$x$opts$series <- list(list(
-  type= 'tree', orient= 'TB', roam= TRUE, initialTreeDepth= -1,
-  data= ec.data(hc, format='dendrogram'),
-  # layout= 'radial', symbolSize= ec.clmn(-1, scale= 0.33),
-  #    exclude added labels like 'pXX', leaving only the originals
-  label= list(formatter= htmlwidgets::JS(
-    "function(n) { out= /p\\\\d+/.test(n.name) ? '' : n.name; return out;}"))
-))
-p
+ec.init(preset= FALSE,
+        series= list(list(
+          type= 'tree', orient= 'TB', roam= TRUE, initialTreeDepth= -1,
+          data= ec.data(hc, format='dendrogram'),
+          # layout= 'radial', symbolSize= ec.clmn(scale= 0.33),
+          ## exclude added labels like 'pXX', leaving only the originals
+          label= list(formatter= htmlwidgets::JS(
+            "function(n) { out= /p\\\\d+/.test(n.name) ? '' : n.name; return out;}"))
+        ))
+)
 
 }
 \seealso{

@@ -8,7 +8,6 @@ ec.init(
   df = NULL,
   preset = TRUE,
   ctype = "scatter",
-  load = NULL,
   tl.series = NULL,
   width = NULL,
   height = NULL,
@@ -17,7 +16,9 @@ ec.init(
 }
 \arguments{
 \item{df}{A data.frame to be preset as \href{https://echarts.apache.org/en/option.html#dataset}{dataset}, default NULL \cr
-For crosstalk df should be of type \link[crosstalk]{SharedData}.\cr
+By default the first column is for X values, second column is for Y, and third is for Z when in 3D.\cr
+Best practice is to have the grouping column placed last. Grouping column cannot be used as axis.\cr
+For crosstalk df should be of type \link[crosstalk]{SharedData}, see \href{https://helgasoft.github.io/echarty/xtalk.html}{more info}.\cr
 Timeline requires a \emph{grouped data.frame} to build its \href{https://echarts.apache.org/en/option.html#options}{options}.\cr
 If grouping is on multiple columns, only the first one is used to determine settings.}
 
@@ -25,11 +26,8 @@ If grouping is on multiple columns, only the first one is used to determine sett
 
 \item{ctype}{Chart type of series. Default is 'scatter'. Set to NULL to disable series preset.}
 
-\item{load}{Name(s) of plugin(s) to load. Could be a character vector or comma-delimited string. default NULL.}
-
 \item{tl.series}{A list to build a timeline or NULL(default). The list defines options \href{https://echarts.apache.org/en/option.html#series}{series} and their attributes. \cr
-Requires a grouped data.frame \emph{df}.
-The only indispensable attribute is \href{https://echarts.apache.org/en/option.html#series-line.encode}{encode}.\cr
+The only required attribute is \href{https://echarts.apache.org/en/option.html#series-line.encode}{encode}.\cr
 \emph{encode} defines which data columns names to use for the axes: \cr
 \itemize{
 \item set \emph{x} and \emph{y} for coordinateSystem \emph{cartesian2d}
@@ -40,7 +38,9 @@ The only indispensable attribute is \href{https://echarts.apache.org/en/option.h
 }
 
 Attribute \emph{coordinateSystem} is not set by default and depends on chart \emph{type}.\cr
-Auto-generated \emph{timeline} and \emph{options} will be preset for the chart as well.\cr
+Custom attribute \emph{groupBy}, a \emph{df} column name, can create series groups inside each timeline step.
+A grouped \emph{df} must be present, with group column providing the \href{https://echarts.apache.org/en/option.html#timeline.data}{timeline data}.
+Auto-generated \emph{timeline} and \emph{options} will be preset for the chart.\cr
 \emph{tl.series} cannot be used for hierarchical charts like graph,tree,treemap,sankey. Chart options/timeline have to be built directly, see \href{https://helgasoft.github.io/echarty/uc4.html}{example}.}
 
 \item{width, height}{A valid CSS unit (like \code{'100\%'},
@@ -48,16 +48,17 @@ Auto-generated \emph{timeline} and \emph{options} will be preset for the chart a
 string and have \code{'px'} appended.}
 
 \item{...}{other arguments to pass to the widget. \cr
-Custom widget arguments include: \cr
+Custom echarty widget arguments include: \cr
 \itemize{
 \item elementId - Id of the widget, default is NULL(auto-generated)
+\item load - name(s) of plugin(s) to load. Could be a character vector or comma-delimited string. default NULL.
 \item ask - prompt user before downloading plugins when \emph{load} is present, FALSE by default
 \item js - single string or a vector with JavaScript expressions to evaluate.\cr
 First expression is evaluated before chart initialization. \cr
 Second is evaluated with an exposed object \emph{opts}. \cr
 Third is evaluated with an exposed \emph{chart} object after \emph{opts} have been set.
 \item renderer - 'canvas'(default) or 'svg'
-\item locale - 'EN'(default) or 'ZH'. Define others \href{https://gist.github.com/helgasoft/0618c6537c45bfd9e86d3f9e1da497b8}{like so}, see \href{https://echarts.apache.org/en/api.html#echarts.init}{definitions}.
+\item locale - 'EN'(default) or 'ZH'. Use predefined or custom \href{https://gist.github.com/helgasoft/0618c6537c45bfd9e86d3f9e1da497b8}{like so}.
 \item useDirtyRect - enable dirty rectangle rendering or not, FALSE by default, see \href{https://echarts.apache.org/en/api.html#echarts.init}{here}
 }}
 }
@@ -76,16 +77,18 @@ Plugins 'leaflet' and 'world' preset zoom=6 and center to the mean of all coordi
 Users can delete or overwrite any presets as needed. \cr
 \link{ec.plugjs} will be called internally for each \emph{load} entry, popup prompts controlled by parameter \emph{ask}. \cr
 
-Built-in plugins: \cr \itemize{
+Built-in plugins: \cr
+\itemize{
 \item leaflet - Leaflet maps with customizable tiles, see \href{https://github.com/gnijuohz/echarts-leaflet#readme}{source}\cr
 \item custom - renderers for \link{ecr.band} and \link{ecr.ebars} \cr
-} Plugins with one-time installation: \cr \itemize{
+Plugins with one-time installation: \cr
 \item 3D - 3D charts and WebGL acceleration, see \href{https://github.com/ecomfe/echarts-gl}{source} and \href{https://echarts.apache.org/en/option-gl.html#series}{docs} \cr
 \item world - world map with country boundaries, see \href{https://github.com/apache/echarts/tree/master/test/data/map/js}{source} \cr
 \item liquid - liquid fill, see \href{https://github.com/ecomfe/echarts-liquidfill}{source}  \cr
 \item gmodular - graph modularity, see \href{https://github.com/ecomfe/echarts-graph-modularity}{source}  \cr
 \item wordcloud - cloud of words, see \href{https://github.com/ecomfe/echarts-wordcloud}{source} \cr
-} or install your own third-party plugins.
+or install your own third-party plugins.
+}
 }
 \examples{
  # basic scatter chart from a data.frame, using presets
@@ -93,13 +96,13 @@ cars |> ec.init()
  
  # a timeline with two series and autoPlay
 p <- iris |> dplyr::group_by(Species) |> ec.init(
-  tl.series=list(
+  legend= list(show=TRUE),
+  tl.series= list(
     encode=list(x=NULL, y=c('Sepal.Width', 'Petal.Length')),
     markPoint = list(data=list(list(type='max'), list(type='min')))
   )
-)
+) # |> ec.upd(...
 p$x$opts$timeline <- append(p$x$opts$timeline, list(autoPlay=TRUE))
-p$x$opts$legend <- list(list())  # add legend
 p
 
 }

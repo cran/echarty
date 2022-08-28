@@ -6,6 +6,7 @@ df <- data.frame(
   size = rnorm(10, 10, 2),
   symbol = sample(c("circle", "rect", "triangle"), 10, replace= TRUE)
 )
+
 test_that("ec.init presets for non-grouped data.frame", {
   p <- df |> ec.init()
   expect_equal(p$x$opts$xAxis$type, 'category')
@@ -13,7 +14,7 @@ test_that("ec.init presets for non-grouped data.frame", {
   expect_equal(length(p$x$opts$dataset[[1]]$source), 11)
   expect_equal(p$x$opts$series[[1]]$type, 'scatter')
 })
-#> Test passed 🥇
+
 
 test_that("ec.init presets for grouped data.frame", {
   p <- df |> dplyr::group_by(symbol) |> ec.init()
@@ -44,5 +45,50 @@ test_that("ec.init presets for timeline", {
   expect_equal(length(p$x$opts$options), 4)
   expect_equal(p$x$opts$options[[4]]$title$text, '2021')
 })
+
+
+test_that("ec.init presets for timeline groupBy", {
+  set.seed(2022)
+  dat <- data.frame(
+    x3 = runif(16),
+    x4 = runif(16),
+    x5 = abs(runif(16)),
+    x1 = rep(2020:2023, each = 4),
+    x2 = rep(c("A", "A", "B", "B"), 4)
+  ) 
+  p <- dat |> group_by(x1) |> ec.init(
+    tl.series= list(encode= list(x= 'x3', y= 'x5'), 
+                    symbolSize= ec.clmn(2, scale=30),
+                    groupBy= 'x2') 
+  )
+  p$x$opts$legend <- list(show=TRUE)
+  expect_equal(p$x$opts$options[[4]]$series[[1]]$type, 'scatter')
+  expect_equal(p$x$opts$options[[4]]$series[[1]]$encode$y, 'x5')
+})
+
+test_that("presets for parallel chart", {
+  p <- mtcars |> group_by(cyl) |> ec.init(ctype='parallel')
+
+  expect_equal(length(p$x$opts$dataset), 4)
+  expect_equal(p$x$opts$series[[3]]$datasetIndex, 3)
+  expect_equal(p$x$opts$parallelAxis[[2]]$name, 'disp')
+})
+
+test_that("presets for parallelAxis", {
+  df <- as.data.frame(state.x77) |> head(10)
+  p <- df |> ec.init(ctype= 'parallel',
+              parallelAxis= ec.paxis(df, cols=c('Illiteracy','Population','Income')) ) |>
+    ec.upd({ series <- lapply(series, 
+                              function(ss) { ss$lineStyle <- list(width=3); ss }) })
+
+expect_equal(length(p$x$opts$dataset[[1]]$source[[1]]), 8)
+expect_equal(p$x$opts$parallelAxis[[3]]$name, 'Income')
+})
+
+
+
+
+
+
 
 
