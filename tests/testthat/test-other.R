@@ -1,4 +1,5 @@
 
+
 test_that("registerMap", {
   json <- jsonlite::read_json("https://echarts.apache.org/examples/data/asset/geo/USA.json")
   dusa <- USArrests
@@ -34,7 +35,7 @@ test_that("tl.series and timeline options", {
   expect_true(p$x$opts$dataset[[5]]$transform$config['='] == 1004)
 })
 test_that("tl.series type 'map'", {
-  if (interactive()) {
+#  if (interactive()) {
     cns <- data.frame(
       country = c('United States','China','Russia'),
       value = runif(3, 1, 100)
@@ -44,8 +45,8 @@ test_that("tl.series type 'map'", {
         visualMap= list(calculable=TRUE, max=100)
     )
     expect_equal(p$x$opts$options[[1]]$series[[1]]$data[[1]]$name, "China")
-  }
-  else expect_equal(1,1)
+#  }
+#  else expect_equal(1,1)
 })
   
 test_that("ec.upd(), echarts.registerTransform and ecStat", {
@@ -61,7 +62,7 @@ test_that("ec.upd(), echarts.registerTransform and ecStat", {
 })
 
 test_that("leaflet with ec.clmn", {
-  if (interactive()) {
+#  if (interactive()) {
     tmp <- quakes |> dplyr::relocate('long') |>  # set order to lon,lat
       dplyr::mutate(size= exp(mag)/20) |> head(100)  # add accented size
     p <- tmp |> ec.init(load= 'leaflet',
@@ -71,9 +72,9 @@ test_that("leaflet with ec.clmn", {
     })
     
     expect_equal(p$x$opts$leaflet$zoom, 6)
-    expect_equal(class(p$x$opts$tooltip$formatter), 'JS_EVAL')
-  }
-  else expect_equal(1,1)
+    expect_s3_class(p$x$opts$tooltip$formatter, 'JS_EVAL')
+#  }
+#  else expect_equal(1,1)
 })
 
 test_that("ec.data format dendrogram", {
@@ -89,10 +90,10 @@ test_that("ec.data format dendrogram", {
 })
 
 test_that("ec.data format boxlpot", {
-  ds <- mtcars |> dplyr::relocate(am,mpg) |> ec.data(format='boxplot')
-  expect_equal(ds$series[[1]]$type, 'boxplot')
-  expect_equal(ds$dataset$source[[1]], c("V1","V2","V3","V4","V5","V6"))
-  expect_equal(class(ds$axlbl), 'list')  # was 'JS_EVAL'
+  p <- mtcars |> dplyr::relocate(am,mpg) |> ec.data(format='boxplot')
+  expect_equal(p$series[[1]]$type, 'boxplot')
+  expect_equal(p$dataset$source[[1]], c("V1","V2","V3","V4","V5","V6"))
+  expect_type(p$axlbl, 'list')  # was 'JS_EVAL'
 })
 
 test_that("ec.data for treePC", {
@@ -159,65 +160,5 @@ test_that("load 3D surface", {
   #else expect_equal(1,1)
 })
 
-test_that("shapefiles with multi-polygons", {
-  #if (interactive()) {
-    library(sf)
-    fname <- system.file("shape/nc.shp", package="sf")
-    nc <- as.data.frame(st_read(fname))
-    p <- ec.init(load= c('leaflet', 'custom'),  # load custom for polygons
-       js= ec.util(cmd= 'sf.bbox', bbox= st_bbox(nc$geometry)),
-       series= ec.util(cmd= 'sf.series', df= nc, nid= 'NAME', itemStyle= list(opacity= 0.3)),
-       tooltip= list(show= TRUE, formatter= '{a}')
-    )
-    expect_true(p$x$opts$leaflet$roam)
-    expect_equal(p$x$opts$series[[108]]$name, 'Brunswick')
-    expect_equal(p$x$opts$series[[108]]$itemStyle$opacity, 0.3)
-  #}
-  #else expect_equal(1,1)
-})
 
-test_that("shapefile from ZIP", {
-  if (interactive()) {  # creates a subfolder 'railways'
-    library(sf)
-    fname <- ec.util(cmd= 'sf.unzip', 
-                     url= 'https://mapcruzin.com/sierra-leone-shapefiles/railways.zip')
-    nc <- as.data.frame(st_read(fname))
-    p <- ec.init(load= 'leaflet',
-       js= ec.util(cmd= 'sf.bbox', bbox= st_bbox(nc$geometry)), 
-       series= ec.util(df= nc, nid= 'osm_id', verbose=TRUE,
-                       lineStyle= list(width= 3, color= 'red')),
-       tooltip= list(formatter= '{a}'), animation= FALSE,
-       leaflet= list(tiles= list(list(
-         urlTemplate= 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.{ext}',
-         options= list(attribution= 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>',
-                       subdomains= 'abcd',	maxZoom= 18,	ext= 'png')))) 
-    )
-    expect_equal(p$x$opts$leaflet$tiles[[1]]$options$subdomains, 'abcd')
-    expect_equal(p$x$opts$series[[6]]$name, '207557821')
-    expect_equal(p$x$opts$series[[6]]$lineStyle$color, 'red')
-    
-  }
-  else expect_equal(1,1)
-})
 
-test_that("tabset", {
-   p1 <- cars |> ec.init(width= 300, height= 300, grid= list(top= 20))
-   p2 <- mtcars |> ec.init(width= 300, height= 300)
-   r <- htmltools::browsable(
-     ec.util(cmd='tabset', cars=p1, mtcars=p2)
-   )
-   expect_equal(r[[2]]$children[[5]]$children[[1]]$children[[1]][[1]]$x$opts$dataset[[1]]$source[[1]], c("speed", "dist"))
-   expect_equal(r[[2]]$children[[5]]$children[[1]]$name, "section")
-   expect_equal(r[[2]]$children[[2]]$children[[1]], "cars")
-})
-
-test_that("tabset with pipe", {
-  library(dplyr)
-  r <- htmltools::browsable(
-    lapply(iris |> group_by(Species) |> group_split(), function(x) { 
-      x |> ec.init(ctype= 'scatter', title= list(text= unique(x$Species)))
-    }) |> ec.util(cmd='tabset')
-  )
-  expect_equal(r[[2]]$children[[7]]$children[[2]]$children[[1]][[1]]$width, 300)
-  expect_equal(r[[2]]$children[[6]]$children[[1]], "chart3")
-})

@@ -4,51 +4,74 @@
 \alias{ec.util}
 \title{Utility functions}
 \usage{
-ec.util(..., cmd = "sf.series")
+ec.util(..., cmd = "sf.series", js = NULL)
 }
 \arguments{
 \item{...}{Optional parameters for the command \cr
 for \emph{sf.series} - see \href{https://echarts.apache.org/en/option.html#series-scatter.type}{points}, \href{https://echarts.apache.org/en/option.html#series-lines.type}{polylines}, polygons(itemStyle).\cr
 for \emph{tabset} parameters should be in format \emph{name1=chart1, name2=chart2}, see example\cr}
 
-\item{cmd}{Utility command\cr
-\itemize{
-\item \emph{sf.series} returns a list of chart series\cr
-required parameter \emph{df} - value from \link[sf]{st_read}\cr
-optional parameter \emph{nid} - column name for name-id used in tooltips\cr
-optional coordinate system \emph{cs} - \emph{leaflet}(default) or \emph{geo}\cr
-\item \emph{sf.bbox} returns JavaScript code to position a map inside a bounding box from \link[sf]{st_bbox}, for leaflet only.\cr
-\item \emph{sf.unzip} unzips a remote file and returns local file name of the unzipped .shp file\cr
-required parameter \emph{url} - URL of remote zipped shapefile\cr
-optional parameter \emph{shp} - name of .shp file inside ZIP file if multiple exist. Do not add file extension. \cr
-\item \emph{tabset} returns a \emph{tagList} of tabs, each tab may contain a chart.\cr
-\item \emph{layout} returns a container \link[htmltools]{div} in rmarkdown, otherwise \link[htmltools]{browsable}.\cr
-}}
+\item{cmd}{utility command, see Details\cr}
+
+\item{js}{optional JavaScript function, default is NULL.\cr}
 }
 \description{
-tabset, table layout, support for GIS shapefiles thru library sf
+tabset, table layout, support for GIS shapefiles through library sf
 }
 \details{
-\strong{cmd='sf.series'}\cr
-\verb{   }Goal is to build leaflet or \href{https://echarts.apache.org/en/option.html#geo.map}{geo} map series from shapefiles.\cr
+\strong{cmd = 'sf.series'}\cr
+\verb{   }Build \emph{leaflet} or \href{https://echarts.apache.org/en/option.html#geo.map}{geo} map series from shapefiles.\cr
 \verb{   }Supported types: POINT, MULTIPOINT, LINESTRING, MULTILINESTRING, POLYGON, MULTIPOLYGON \cr
+\verb{   }Coordinate system is \emph{leaflet}(default) or \emph{geo}\cr
 \verb{   }Limitations:\cr
 \verb{     }polygons can have only their name in tooltip,  \cr
 \verb{     }assumes Geodetic CRS is WGS 84, use \link[sf]{st_transform} with \emph{crs=4326} to convert.\cr
-\verb{   }optional parameter: \cr
-\verb{     }verbose= Print shapefile item names in console\cr
-\strong{cmd='layout'} \cr
-\verb{   }multiple charts in table-like rows/columns format, ...= List of charts\cr
-\verb{   }optional parameters are: \cr
-\verb{     }title= Title for the set, rows= Number of rows, cols= Number of columns,\cr
-\verb{     }width= Width of columns (one of xs, md, lg)\cr
+\verb{   }parameter \emph{df} - value from \link[sf]{st_read}\cr
+\verb{   }optional parameters: \cr
+\verb{     }nid - column name for name-id used in tooltips\cr
+\verb{     }verbose - print shapefile item names in console\cr
+\verb{   }returns a list of chart series\cr
+\strong{cmd = 'sf.bbox'}\cr
+\verb{   }returns JavaScript code to position a map inside a bounding box from \link[sf]{st_bbox}, for leaflet only.\cr
+\strong{cmd = 'sf.unzip'}\cr
+\verb{   }unzips a remote file and returns local file name of the unzipped .shp file\cr
+\verb{   }url - URL of remote zipped shapefile\cr
+\verb{   }optional \emph{shp} - name of .shp file inside ZIP file if multiple exist. Do not add file extension. \cr
+\strong{cmd = 'layout'} \cr
+\verb{   }multiple charts in table-like rows/columns format\cr
+\verb{   }... - List of charts\cr
+\verb{   }optional parameters: \cr
+\verb{     }title - Title for the set, rows= Number of rows, cols= Number of columns,\cr
+\verb{     }width - Width of columns (one of xs, md, lg)\cr
+\verb{   }returns a container \link[htmltools]{div} in rmarkdown, otherwise \link[htmltools]{browsable}.\cr
 \verb{   }For 3-4 charts one would use multiple series within a \href{https://echarts.apache.org/en/option.html#grid}{grid}. \cr
 \verb{   }For greater number of charts \emph{ec.util(cmd='layout')} comes in handy\cr
-\strong{cmd='tabset'} \cr
-\verb{   }...= a list of charts OR tab-name/chart pairs like \emph{n1=chart1, n2=chart2}\cr
+\strong{cmd = 'tabset'} \cr
+\verb{   }... - a list tab-name/chart pairs like \emph{n1=chart1, n2=chart2}\cr
 \verb{   }optional parameters are: \cr
-\verb{     }width= Width of tabs in pixels, height= Height of tabs in pixels\cr
-\verb{     }tabStyle= tab style string, see default \emph{tabStyle} variable in the code
+\verb{     }width - Width of tabs in pixels, height= Height of tabs in pixels\cr
+\verb{     }tabStyle - tab style string, see default \emph{tabStyle} variable in the code\cr
+\verb{   }returns a \link[htmltools]{tagList} of tabs, each tab may contain a chart.\cr
+\strong{cmd = 'morph'} \cr
+\verb{   }... - a list of charts or chart options\cr
+\verb{   }optional parameter: \cr
+\verb{     }js - JS function for switching charts. Default function is on \emph{mouseover}.\cr
+\verb{   }returns a chart with ability to morph into other charts\cr
+\strong{cmd = 'fullscreen'} \cr
+\verb{   }a toolbox feature to toggle fullscreen on/off. Works in a browser, not in RStudio.\cr
+\strong{cmd = 'rescale'} \cr
+\verb{   }t - target range c(min,max), numeric vector of two\cr
+\verb{   }v - vector of numeric values to rescale\cr
+\strong{cmd = 'level'} \cr
+\verb{   }calculate vertical levels for timeline \emph{line} charts, returns a numeric vector\cr
+\verb{   }df - data.frame with from & to columns\cr
+\verb{   }from - name of 'from' column\cr
+\verb{   }to - name of 'to' column\cr
+\strong{cmd = 'labelsInside'} \cr
+\verb{   }labelLayout function to keep overflowing endLabels inside chart\cr
+\verb{   }optional parameters: \cr
+\verb{     }cid - elementId of the chart when multiple charts\cr
+\verb{     }dy - vertical offset in pixels, negative up, positive down\cr
 }
 \examples{
 if (interactive()) {  # comm.out: Fedora errors about some 'browser'
@@ -78,5 +101,19 @@ if (interactive()) {  # comm.out: Fedora errors about some 'browser'
   lapply(list('dark','macarons','gray','jazz','dark-mushroom'),
                 function(x) cars |> ec.init() |> ec.theme(x) ) |>
   ec.util(cmd='layout', cols= 2, title= 'my layout')
+  
+  setd <- function(type) {
+    mtcars |> group_by(cyl) |> ec.init(ctype=type) |> ec.upd({
+    title <- list(subtext='mouseover points to morph')
+    xAxis <- list(scale=TRUE)
+    series <- lapply(series, function(ss) {
+      ss$groupId <- ss$name
+      ss$universalTransition <- list(enabled=TRUE)
+      ss })
+    })
+  }
+  oscatter <- setd('scatter')
+  obar <- setd('bar')
+  ec.util(cmd='morph', oscatter, obar)
 }
 }

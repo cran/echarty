@@ -7,9 +7,29 @@ df <- data.frame(
   symbol = sample(c("circle", "rect", "triangle"), 10, replace= TRUE)
 )
 
+test_that("options preset", {
+  options(echarty.theme='jazz')
+  p <- ec.init()
+  expect_equal(p$x$theme, 'jazz')
+  expect_equal(p$dependencies[[1]]$name, 'jazz')
+  
+  p <- cars |> ec.init() |> ec.theme(name='mine', code='{ "backgroundColor": "pink" }')
+  expect_equal(p$x$theme, 'mine')
+  
+  options(echarty.theme=NULL)
+  p <- cars |> ec.init()
+  expect_equal(p$x$theme, '')
+  
+  options(echarty.font='monospace')
+  p <- cars |> ec.init()
+  expect_equal(p$x$opts$textStyle$fontFamily, 'monospace')
+  options(echarty.font=NULL)
+})
+
 test_that("ec.init presets for non-grouped data.frame", {
-  p <- df |> ec.init()
+  p <- df |> ec.init(xAxis= list(scale=TRUE))
   expect_equal(p$x$opts$xAxis$type, 'category')
+  #expect_true(is.null(p$x$opts$xAxis$type))  # assume default='category' = WRONG
   expect_true(!is.null(p$x$opts$yAxis))
   expect_equal(length(p$x$opts$dataset[[1]]$source), 11)
   expect_equal(p$x$opts$series[[1]]$type, 'scatter')
@@ -17,7 +37,7 @@ test_that("ec.init presets for non-grouped data.frame", {
 
 
 test_that("ec.init presets for grouped data.frame", {
-  p <- df |> dplyr::group_by(symbol) |> ec.init()
+  p <- df |> dplyr::group_by(symbol) |> ec.init(yAxis= list(scale=TRUE))
   expect_equal(p$x$opts$xAxis$type, 'category')
   expect_true(!is.null(p$x$opts$yAxis))
   expect_equal(length(p$x$opts$dataset[[1]]$source), 11)
@@ -35,7 +55,7 @@ test_that("ec.init presets for timeline", {
     value = runif(16)
   )
   barTL <- function(data, timeline_var, x_var, bar_var) {
-    bt <- data |> group_by(!!sym(timeline_var)) |> 
+    bt <- data |> dplyr::group_by(!!dplyr::sym(timeline_var)) |> 
       ec.init(tl.series = list(type='bar', encode=list(x=x_var, y=bar_var)))
     bt
   }
@@ -78,17 +98,41 @@ test_that("presets for parallelAxis", {
   df <- as.data.frame(state.x77) |> head(10)
   p <- df |> ec.init(ctype= 'parallel',
               parallelAxis= ec.paxis(df, cols=c('Illiteracy','Population','Income')) ) |>
-    ec.upd({ series <- lapply(series, 
-                              function(ss) { ss$lineStyle <- list(width=3); ss }) })
-
-expect_equal(length(p$x$opts$dataset[[1]]$source[[1]]), 8)
-expect_equal(p$x$opts$parallelAxis[[3]]$name, 'Income')
+    ec.upd({ series <- lapply(series,
+        function(ss) { ss$lineStyle <- list(width=3); ss }) 
+    })
+  expect_equal(length(p$x$opts$dataset[[1]]$source[[1]]), 8)
+  expect_equal(p$x$opts$parallelAxis[[3]]$name, 'Income')
 })
 
+test_that("presets for crosstalk", {
+  library(crosstalk)
+  df <- cars
+  df <- SharedData$new(df)
+  p <- df |> ec.init()
+  expect_equal(p$x$opts$dataset[[2]]$id, 'Xtalk')
+  expect_equal(p$x$opts$series[[1]]$datasetId, 'Xtalk')
+  expect_equal(p$x$opts$dataset[[1]]$source[[1]][3], 'XkeyX')
+})
 
-
-
-
+test_that("presets for leaflet", {
+  tmp <- '
+lng,lat,name,date,place
+-118.808101,32.843715,"Seabed","2021-02-02","location A"
+-117.332678,34.845565,"Lancaster","2021-04-02","location A"
+-116.127504,32.846118,"fwy #8","2021-04-02","place B"
+-117.316886,30.961700,"Baja","2021-07-02","place B"
+'
+  df <- read.csv(text=tmp, header=TRUE)
+  p <- df |> ec.init(
+    load='leaflet', tooltip= list(ey=''),
+    series= list(list(
+      encode= list(tooltip=c(3,4,5))
+    ))
+  )
+  expect_equal(p$x$opts$series[[1]]$coordinateSystem, 'leaflet')
+  expect_equal(p$x$opts$series[[1]]$encode$tooltip, c(2,3,4))
+})
 
 
 

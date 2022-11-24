@@ -1,6 +1,21 @@
-# history of echarty package development
+# history of package _echarty_
 
-## v.1.4.7
+## v.1.5.0 in development
+
+- upgrade ECharts to v.5.4.0
+- built with R v.4.2.2
+- added vignette with introduction
+- _ecr.ebars_ fix bug, enhance tooltips
+- _ec.util_ improvements in sf.series
+- _ec.util_ new commands _fullscreen_(multi-charts), _morph_, _rescale_, _level_
+- _ec.clmn_ new options 'json' and 'log'
+- _ec.init_ set R-counting for series$encode/xAxisIndex, visualMap$dimension
+- fixes to global options theme & font, group legend
+- fixed _load='world'_ with series set
+- new _load='lottie'_, lotties support now built-in 
+- reorganize crosstalk code
+
+## v.1.4.7 on CRAN
 
 - _ec.util_: add POLYGON/MULTIPOINT, rename param 'type' to 'cmd', new _sf.unzip_
 - _ec.util_: new cmd='tabset' to show multiple charts in tabs

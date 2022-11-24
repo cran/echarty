@@ -18,7 +18,6 @@ ec.init(
 \item{df}{A data.frame to be preset as \href{https://echarts.apache.org/en/option.html#dataset}{dataset}, default NULL \cr
 By default the first column is for X values, second column is for Y, and third is for Z when in 3D.\cr
 Best practice is to have the grouping column placed last. Grouping column cannot be used as axis.\cr
-For crosstalk df should be of type \link[crosstalk]{SharedData}, see \href{https://helgasoft.github.io/echarty/xtalk.html}{more info}.\cr
 Timeline requires a \emph{grouped data.frame} to build its \href{https://echarts.apache.org/en/option.html#options}{options}.\cr
 If grouping is on multiple columns, only the first one is used to determine settings.}
 
@@ -51,12 +50,12 @@ string and have \code{'px'} appended.}
 Custom echarty widget arguments include: \cr
 \itemize{
 \item elementId - Id of the widget, default is NULL(auto-generated)
-\item load - name(s) of plugin(s) to load. Could be a character vector or comma-delimited string. default NULL.
+\item load - name(s) of plugin(s) to load. A character vector or comma-delimited string. default NULL.
 \item ask - prompt user before downloading plugins when \emph{load} is present, FALSE by default
 \item js - single string or a vector with JavaScript expressions to evaluate.\cr
 First expression is evaluated before chart initialization. \cr
-Second is evaluated with an exposed object \emph{opts}. \cr
-Third is evaluated with an exposed \emph{chart} object after \emph{opts} have been set.
+Second is evaluated with exposed object \emph{opts}. \cr
+Third is evaluated with exposed \emph{chart} object after \emph{opts} have been set.
 \item renderer - 'canvas'(default) or 'svg'
 \item locale - 'EN'(default) or 'ZH'. Use predefined or custom \href{https://gist.github.com/helgasoft/0618c6537c45bfd9e86d3f9e1da497b8}{like so}.
 \item useDirtyRect - enable dirty rectangle rendering or not, FALSE by default, see \href{https://echarts.apache.org/en/api.html#echarts.init}{here}
@@ -71,24 +70,29 @@ Required to build a chart. In most cases this will be the only command necessary
 \details{
 Command \emph{ec.init} creates a widget with \link[htmlwidgets]{createWidget}, then adds some ECharts features to it.\cr
 When \emph{ec.init} is chained after a data.frame, a \href{https://echarts.apache.org/en/option.html#dataset}{dataset} is preset. \cr
-When the data.frame is grouped and \emph{ctype} is not null, more datasets with legend and series are also preset. Grouped series are preset as type \emph{scatter}. \cr
+When data.frame is grouped and \emph{ctype} is not null, more datasets with legend and series are also preset. Grouped series are preset as type \emph{scatter}. \cr
 Plugin '3D' presets will not work for 'scatterGL'. Instead, use \emph{preset=FALSE} and set explicitly \emph{xAxis,yAxis}. \cr
 Plugins 'leaflet' and 'world' preset zoom=6 and center to the mean of all coordinates. \cr
 Users can delete or overwrite any presets as needed. \cr
-\link{ec.plugjs} will be called internally for each \emph{load} entry, popup prompts controlled by parameter \emph{ask}. \cr
 
 Built-in plugins: \cr
 \itemize{
 \item leaflet - Leaflet maps with customizable tiles, see \href{https://github.com/gnijuohz/echarts-leaflet#readme}{source}\cr
+\item world - world map with country boundaries, see \href{https://github.com/apache/echarts/tree/master/test/data/map/js}{source} \cr
+\item lottie - support for \href{https://lottiefiles.com}{lotties} \cr
 \item custom - renderers for \link{ecr.band} and \link{ecr.ebars} \cr
 Plugins with one-time installation: \cr
 \item 3D - 3D charts and WebGL acceleration, see \href{https://github.com/ecomfe/echarts-gl}{source} and \href{https://echarts.apache.org/en/option-gl.html#series}{docs} \cr
-\item world - world map with country boundaries, see \href{https://github.com/apache/echarts/tree/master/test/data/map/js}{source} \cr
 \item liquid - liquid fill, see \href{https://github.com/ecomfe/echarts-liquidfill}{source}  \cr
 \item gmodular - graph modularity, see \href{https://github.com/ecomfe/echarts-graph-modularity}{source}  \cr
 \item wordcloud - cloud of words, see \href{https://github.com/ecomfe/echarts-wordcloud}{source} \cr
-or install your own third-party plugins.
+or install your own third-party plugins.\cr
 }
+
+Crosstalk:\cr
+Parameter \emph{df} should be of type \link[crosstalk]{SharedData}, see \href{https://helgasoft.github.io/echarty/gallery.html#crosstalk-2d}{more info}.\cr
+It should NOT have string row names. Use \link[tibble]{rownames} to remove or convert to column.\cr
+Enabling \emph{crosstalk} will generate an additional dataset called \emph{Xtalk} and bind the first serie to it if \emph{datasetId} not set.\cr
 }
 \examples{
  # basic scatter chart from a data.frame, using presets
@@ -101,11 +105,8 @@ p <- iris |> dplyr::group_by(Species) |> ec.init(
     encode=list(x=NULL, y=c('Sepal.Width', 'Petal.Length')),
     markPoint = list(data=list(list(type='max'), list(type='min')))
   )
-) # |> ec.upd(...
+) # |> ec.upd({...})
 p$x$opts$timeline <- append(p$x$opts$timeline, list(autoPlay=TRUE))
 p
 
-}
-\seealso{
-Package information in \link{echarty-package}.
 }
