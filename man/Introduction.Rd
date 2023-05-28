@@ -35,14 +35,14 @@ Echarty uses the following options:
 \section{Events}{
 Event handling is usually necessary only in Shiny. See code in
 \link{ec.examples} and \code{eshiny.R}, run as \code{demo(eshiny)}.\if{html}{\out{<br>}}
-echarty has two built-in event callbacks - \code{click} and \code{mouseover}. \if{html}{\out{<br>}}
-All other ECharts
+echarty has three built-in event callbacks - \emph{click}, \emph{mouseover},
+\emph{mouseout}. \if{html}{\out{<br>}} All other ECharts
 \href{https://echarts.apache.org/en/api.html#events}{events} should be
 initialized through \code{p$x$capture}. Another option is to use \code{p$x$on}
 with JavaScript handlers, see code in \link{ec.examples}.
 }
 
-\section{Widget ‘x’ parameters}{
+\section{Widget \code{x} parameters}{
 These are \code{htmlwidget} and \code{ECharts} initialization parameters supported
 by echarty. There are code samples for most of them in
 \link{ec.examples}.
@@ -56,10 +56,10 @@ by echarty. There are code samples for most of them in
 \href{https://echarts.apache.org/en/api.html#echartsInstance.group}{ECharts}
 \item connect = command to connect charts with same group-name, see it in
 \href{https://echarts.apache.org/en/api.html#echarts.connect}{ECharts}
-\item locale = ‘EN’(default) or ‘ZH’, set from \code{locale} parameter of
+\item locale = \code{EN}(default) or \code{ZH}, set from \code{locale} parameter of
 \link{ec.init}, see it in
 \href{https://echarts.apache.org/en/api.html#echarts.init}{ECharts}.
-\item renderer = ‘canvas’(default) or \code{svg}, set from \code{renderer} in
+\item renderer = \code{canvas}(default) or \code{svg}, set from \code{renderer} in
 \link{ec.init}, see it in
 \href{https://echarts.apache.org/en/api.html#echarts.init}{ECharts}.
 \item jcode = custom JavaScript code to execute, set from \code{js} parameter of

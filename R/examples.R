@@ -24,6 +24,8 @@
 #' p <- cars |> ec.init() |> ec.theme('dark')
 #' p
 #' 
+#' #------ parallel chart
+#' ToothGrowth |> ec.init(ctype= 'parallel')
 #' 
 #' #------ JSON back and forth
 #' tmp <- cars |> ec.init()
@@ -33,25 +35,45 @@
 #'
 #'
 #' #------ Data grouping
-#' library(dplyr)
 #' iris |> mutate(Species= as.character(Species)) |>
-#'          group_by(Species) |> ec.init()      # by non-factor column
+#'         group_by(Species) |> ec.init()      # by non-factor column
 #' 
 #' Orange |> group_by(Tree) |> ec.init() |>
 #'   ec.upd({ series <- lapply(series, function(x) {
 #'     x$symbolSize= 10; x$encode= list(x='age', y='circumference'); x } )
 #'   })
 #' 
+#' #------ Polar bar chart
+#' cnt <- 5; set.seed(222)
+#' data.frame(
+#'     x = seq(cnt),
+#'     y = round(rnorm(cnt, 10, 3)), 
+#'     z = round(rnorm(cnt, 11, 2)),
+#'     colr = rainbow(cnt) 
+#' ) |> 
+#' ec.init( preset= FALSE,
+#'    polar= list(radius= '90%'),
+#'    radiusAxis= list(max= 'dataMax'), 
+#'    angleAxis= list(type= "category"),
+#'    series= list(
+#'    	list(type= "bar", coordinateSystem= "polar",
+#'    		itemStyle= list(color= ec.clmn('colr')),
+#'    		label= list(show= TRUE, position= "middle", formatter= "y={@[1]}")
+#'    	),
+#' 	   list(type= 'scatter', coordinateSystem= "polar", 
+#'    		itemStyle= list(color= 'black'),
+#' 	   	  encode= list(angle='x', radius='z'))
+#'    )
+#' )
+#'
+#'
 #' #------ Area chart
-#' mtcars |> relocate(wt,mpg) |> arrange(wt) |> group_by(cyl) |> 
-#'   ec.init(ctype= 'line') |>
-#'   ec.upd({ series <- lapply(series, append, list(areaStyle= list(show=TRUE)) )
-#'   })
-#' 
+#' mtcars |> dplyr::relocate(wt,mpg) |> arrange(wt) |> group_by(cyl) |>
+#'   ec.init(ctype= 'line', series.param= list(areaStyle= list(show=TRUE)) )
 #' 
 #' #------ Plugin leaflet
 #' tmp <- quakes |> dplyr::relocate('long') |>  # set order to long,lat
-#'   dplyr::mutate(size= exp(mag)/20) |> head(100)   # add accented size
+#'   mutate(size= exp(mag)/20) |> head(100)   # add accented size
 #' tmp |> ec.init(load= 'leaflet',
 #'                tooltip= list(formatter= ec.clmn('magnitude %@', 'mag')),
 #'                legend= list(show=TRUE)
@@ -100,21 +122,22 @@
 #' 
 #' #------ registerMap JSON
 #' # registerMap supports also maps in SVG format, see website gallery
+#' if (interactive()) {
 #' json <- jsonlite::read_json("https://echarts.apache.org/examples/data/asset/geo/USA.json")
 #' dusa <- USArrests
 #' dusa$states <- row.names(dusa)
 #' p <- ec.init(preset= FALSE,
 #'    series= list(list(type= 'map', map= 'USA', roam= TRUE, zoom= 3, left= -100, top= -30,
-#'                      data= lapply(ec.data(dusa, 'names'), 
-#'                        function(x) list(name=x$states, value=x$UrbanPop))
+#'        data= lapply(ec.data(dusa, 'names'), 
+#'            function(x) list(name=x$states, value=x$UrbanPop))
 #'    )),
 #'    visualMap= list(type='continuous', calculable=TRUE, 
-#'                    inRange= list(color = rainbow(8)), seriesIndex= 0,
-#'                    min= min(dusa$UrbanPop), max= max(dusa$UrbanPop))
+#'        inRange= list(color = rainbow(8)),
+#'        min= min(dusa$UrbanPop), max= max(dusa$UrbanPop))
 #' )
 #' p$x$registerMap <- list(list(mapName= 'USA', geoJSON= json))
 #' p
-#'
+#' }
 #'
 #' #------ locale
 #' mo <- seq.Date(Sys.Date() - 444, Sys.Date(), by= "month")
@@ -139,10 +162,10 @@
 #' #------ Liquidfill plugin
 #' if (interactive()) {
 #'   ec.init(load= 'liquid', preset=FALSE,
-#'           series= list(
-#'             type='liquidFill', data=c(0.6, 0.5, 0.4, 0.3),
-#'             waveAnimation= FALSE, animationDuration=0, animationDurationUpdate=0
-#'   ))
+#'     series= list(list(
+#'     type='liquidFill', data=c(0.66, 0.5, 0.4, 0.3),
+#'     waveAnimation= FALSE, animationDuration=0, animationDurationUpdate=0))
+#'   )
 #' }
 #' 
 #' 
@@ -224,31 +247,29 @@
 #' }
 #'
 #'  
-#' #------ Band serie with customization
-#' if (interactive()) {
+#' #------ Band series with customization
 #' dats <- as.data.frame(EuStockMarkets) |> mutate(day= 1:n()) |>
-#'   # first column ('day') usually goes to the X-axis
-#'   relocate(day) |> slice_head(n= 100)
+#'   # first column ('day') becomes X-axis by default
+#'   dplyr::relocate(day) |> slice_head(n= 100)
 #'           
 #' # 1. with unnamed data
 #' ec.init(load= 'custom',
-#'         legend= list(show=TRUE), 
-#'         dataZoom= list(type= 'slider', end= 50) ) |>
-#' ec.upd({
-#'   series = append(
-#'     ecr.band(dats, 'DAX','FTSE', name= 'Ftse-Dax', color= 'lemonchiffon'),
-#'     list(list(type='line', name='CAC', color='red', symbolSize=1,
-#'               data= ec.data(dats |> select(day,CAC), 'values')
-#'     )) )
-#' })
-#' }
+#'  legend= list(show= TRUE), 
+#'  dataZoom= list(type= 'slider', end= 50),
+#'  series = append(
+#'    ecr.band(dats, 'DAX','FTSE', name= 'Ftse-Dax', color= 'lemonchiffon'),
+#'    list(list(type= 'line', name= 'CAC', color= 'red', symbolSize= 1,
+#'              data= ec.data(dats |> select(day,CAC), 'values')
+#'    ))
+#'  )
+#' )
 #' 
 #' # 2. with a dataset
-#' # dats |> ec.init(load= 'custom') |>
-#' # ec.upd({ ... encode= list(x='day', y='CAC') instead of data= })
+#' # dats |> ec.init(load= 'custom', ...
+#' #   + replace data=... with encode= list(x='day', y='CAC')
 #' 
 #' #------ Timeline animation and use of ec.upd for readability
-#' Orange |> dplyr::group_by(age) |> ec.init(
+#' Orange |> group_by(age) |> ec.init(
 #'   xAxis= list(type= 'category', name= 'tree'),
 #'   yAxis= list(max= max(Orange$circumference)),
 #'   tl.series= list(type= 'bar', encode= list(x='Tree', y='circumference'))
@@ -271,24 +292,37 @@
 #'      preset= FALSE,
 #'      legend= list(selectedMode= "single"),
 #'      tl.series= list(type= 'pie', roseType= 'radius',
+#'                      itemStyle= list(color=ec.clmn(5)), 
+#'                      label= list(formatter=ec.clmn(4)),
 #'                      encode=list(value='value', itemName='type'))
-#' ) |> ec.upd({
-#'      options <- lapply(options, function(s) {
-#'        s$series[[1]]$itemStyle <- list(color=ec.clmn(5))
-#'        s$series[[1]]$label <- list(formatter=ec.clmn(4))
-#'        s })
-#' })
+#' )
 #'
 #'
-#' #------ Boxplot
-#' ds <- mtcars |> relocate(am,mpg) |> group_by(cyl) |> 
-#'       ec.data(format= 'boxplot')
+#' #------ Boxplot without grouping
+#' ds <- mtcars |> select(cyl, drat) |>
+#' 	 ec.data(format='boxplot', jitter=0.1, #layout= 'h',
+#'				symbolSize=5, itemStyle=list(opacity=0.9), 
+#'   			emphasis= list(itemStyle= list(
+#'   			   color= 'chartreuse', borderWidth=4, opacity=1))
+#' 	)
 #' ec.init(
-#'   dataset= ds$dataset, 
-#'   series=  ds$series, 
-#'   yAxis= list(type= 'category'),
-#'   xAxis= list(show= TRUE),
-#'   legend= list(show= TRUE)
+#'   #colors= heat.colors(length(mcyl)),
+#'   legend= list(show= TRUE), tooltip= list(show=TRUE),
+#'   dataset= ds$dataset, series= ds$series, xAxis= ds$xAxis, yAxis= ds$yAxis
+#' ) |> 
+#' ec.upd({ 
+#' 	 series[[1]] <- c(series[[1]], 
+#' 	                  list(color= 'LightGrey', itemStyle= list(color='DimGray')))
+#' }) |> ec.theme('dark-mushroom')
+#' 
+#' 
+#' #------ Boxplot with grouping
+#' ds = airquality |> mutate(Day=round(Day/10)) |> 
+#'   dplyr::relocate(Day,Wind,Month) |> group_by(Month) |>
+#' 	 ec.data(format='boxplot', jitter=0.1, layout= 'h')
+#' ec.init(
+#'   dataset= ds$dataset, series= ds$series,xAxis= ds$xAxis, yAxis= ds$yAxis,
+#'   legend= list(show= TRUE), tooltip= list(show=TRUE)
 #' )
 #' 
 #' 
@@ -369,10 +403,11 @@
 #' if (interactive()) {
 #' df <- mtcars |> group_by(cyl,gear) |> summarise(yy= round(mean(mpg),2)) |>
 #'   mutate(low= round(yy-cyl*runif(1),2), high= round(yy+cyl*runif(1),2)) |>
-#'   relocate(cyl, .after= last_col())   # move group column as last
-#' df |> ec.init(ctype='bar', load='custom', tooltip= list(show=TRUE)) |>
-#'   ecr.ebars(df, name = 'eb'
-#'      ,tooltip = list(formatter=ec.clmn('high <b>%@</b><br>low <b>%@</b>', 4,3)))
+#'   dplyr::relocate(cyl, .after= last_col())   # move group column as last
+#' df |> ec.init(ctype='bar', load='custom',
+#'               xAxis= list(type='category'), tooltip= list(show=TRUE)) |>
+#'   ecr.ebars(df, name = 'eb',
+#'     tooltip = list(formatter=ec.clmn('high <b>%@</b><br>low <b>%@</b>', 4,3)))
 #' }
 #' 
 #' #------ Gauge
@@ -460,26 +495,28 @@
 #' if (interactive()) {
 #'   library(shiny); library(dplyr); library(echarty)
 #' 
-#' ui <- fluidPage( ecs.output('plot') )
+#' ui <- fluidPage(ecs.output('plot'), textOutput('out1') )
 #' server <- function(input, output, session) {
 #'   output$plot <- ecs.render({
-#'     p <- mtcars |> group_by(cyl) |> 
-#'       ec.init(dataZoom= list(type= 'inside'))
-#'     p$x$on <- list(         # event(s) with Javascript handler
+#'     p <- mtcars |> group_by(cyl) |> ec.init(dataZoom= list(type= 'inside'))
+#'     p$x$on <- list(                     # event(s) with Javascript handler
 #'       list(event= 'legendselectchanged',
-#'            handler= htmlwidgets::JS("(event) => alert('selected: '+event.name);"))
+#'            handler= htmlwidgets::JS("(evt) => Shiny.setInputValue('result1',evt.name);"))
 #'     )
 #'     p$x$capture <- 'datazoom'
 #'     p
 #'   })
 #'   observeEvent(input$plot_datazoom, {   # captured event
-#'     cat('\nZoom.start:',input$plot_datazoom$batch$start)
+#'     output$out1 <- renderText({ paste('Zoom.start:',input$plot_datazoom$batch$start,'%') })
 #'   })
 #'   observeEvent(input$plot_mouseover, {  # built-in event
-#'     cat('\n',toString(input$plot_mouseover))
+#'     output$out1 <- renderText({ toString(input$plot_mouseover) })
+#'   })
+#'   observeEvent(input$result1, {
+#'     output$out1 <- renderText({ paste('legend:',input$result1) }) 
 #'   })
 #' }
-#' shinyApp(ui = ui, server = server)
+#' shinyApp(ui, server)
 #' }
 #' 
 #' #------------- Shiny interactive charts demo ---------------
@@ -488,6 +525,7 @@
 #' }  # donttest
 #' @export 
 ec.examples <- function(){
-  cat("copy/paste code from ?ec.examples Help\n Or run all examples at once with example('ec.examples') to see in the Viewer.")
+  cat("copy/paste code from ?ec.examples Help\n 
+      Or run all examples at once with example('ec.examples') to see in Viewer.")
 }
 

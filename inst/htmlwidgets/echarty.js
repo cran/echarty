@@ -14,7 +14,7 @@ HTMLWidgets.widget({
     renderValue: function(x) {
       
       chart = echarts.init(document.getElementById(el.id));
-      chart.dispose();
+      chart.dispose();    // remove previous if any
       if (!initialized) {
         initialized = true;
         if(x.themeCode){
@@ -51,11 +51,16 @@ HTMLWidgets.widget({
       }
       
       chart = echarts.init(document.getElementById(el.id), x.theme, 
-      	{renderer: x.renderer, locale: x.locale, useDirtyRect: x.useDirtyRect});
+      	{ renderer: x.renderer, locale: x.locale, useDirtyRect: x.useDirtyRect }
+      );
+      /*
+      window.addEventListener('resize', function(event) {
+       	chart.resize();
+      }, true); */
       
-      if (window.onresize==undefined)
+      if (window.onresize==undefined)   // single chart only, TODO: many
         window.onresize = function() {
-        	chart.resize();
+        	//chart.resize();
         	ecfun.fs = ecfun.IsFullScreen();  // handle ESC key
         }
 
@@ -79,8 +84,8 @@ HTMLWidgets.widget({
       }
       
       if (opts.graphic && typeof lottieParser!=undefined) {
-          tmp = ecfun.lottieGraphic(opts.graphic);
-          chart.setOption({graphic: tmp}, { replaceMerge: 'graphic'});
+        tmp = ecfun.lottieGraphic(opts.graphic);
+        chart.setOption({graphic: tmp}, { replaceMerge: 'graphic'});
       }
       
       // TODO: timeline to include graphic, etc.   (ECUnitOption, OptionManager ?)
@@ -101,6 +106,13 @@ HTMLWidgets.widget({
         
         chart.on("mouseover", function(e){
           Shiny.onInputChange(el.id + '_mouseover' + ecp, 
+            { name: e.name, data: e.data, dataIndex: e.dataIndex,
+              seriesName: e.seriesName, value: e.value
+            },  {priority:'event'});
+        });
+        
+        chart.on("mouseout", function(e){
+          Shiny.onInputChange(el.id + '_mouseout' + ecp, 
             { name: e.name, data: e.data, dataIndex: e.dataIndex,
               seriesName: e.seriesName, value: e.value
             },  {priority:'event'});
@@ -171,9 +183,9 @@ HTMLWidgets.widget({
           console.log('no series found preset for crosstalk')
       	console.log(' echarty crosstalk on');
         chart.sext = tmp;
-      	chart.akeys = chart.filk = x.settings.crosstalk_key.map(x=>Number(x));
+        // chart.akeys = chart.filk = x.settings.crosstalk_key.map(x=>Number(x));
+      	chart.akeys = chart.filk = x.settings.crosstalk_key;  // save all keys
         chart.sele = [];
-      	// chart.isMap = opts.geo != undefined;
       	
       	var sel_handle = new crosstalk.SelectionHandle();
       	sel_handle.setGroup(x.settings.crosstalk_group);
@@ -197,7 +209,7 @@ HTMLWidgets.widget({
         		if (keys.selected.length>0)
         		    items = keys.selected[0].dataIndex;
         		if (keys.isFromClick) {
-        		  //if (items.length==0) items = this.akeys; // send all keys: bad 4 map
+        		  //if (items.length==0) items = this.akeys; // send all keys: bad for map
         	    tmp = items.map(i=> chart.filk[i])
         		  //console.log('s=',items,' > ',tmp);
         		  sel_handle.set(tmp.map(String));
@@ -208,13 +220,13 @@ HTMLWidgets.widget({
     	  sel_handle.on("change", function(e) {  // external keys to our select
         	if (e.sender == sel_handle) return;
           if (e.oldValue && e.oldValue.length>0) {   // clear previous
-      	    tmp = e.oldValue.map(x=>Number(x))  //.map(v => v-1);
-      	    tmp = tmp.map(r=> chart.filk.indexOf(r))
+      	    tmp = e.oldValue;  //.map(x=>Number(x));
+      	    tmp = tmp.map(r=> chart.filk.indexOf(r));
             chart.dispatchAction({type: 'downplay', 
                   seriesIndex: chart.sext, dataIndex: tmp });
           }
-          if (e.value.length>0) {
-    	      tmp = e.value.map(x=>Number(x))
+          if (e.value.length > 0) {
+    	      tmp = e.value;  //.map(x=>Number(x))
       	    tmp = tmp.map(r=> chart.filk.indexOf(r))
     	      chart.dispatchAction({type: 'highlight', 
     	            seriesIndex: chart.sext, dataIndex: tmp });
@@ -224,19 +236,15 @@ HTMLWidgets.widget({
       	ct_filter.on('change', function(e) {    // external keys to filter
       		if (e.sender == ct_filter) return;
       		if (e.value == undefined) e.value = [];  // sent by filter_checkbox ?!
-        //  if (chart.sele.length>0) {    // clear selection(s) before new filter
-        //    chart.dispatchAction({type: 'unselect',   // works for self only
-        //          seriesIndex: chart.sext, dataIndex: chart.sele });
-        //    chart.sele = [];
-      	//  }
           
-          rexp = (e.value.length == chart.akeys.length ||
-                  e.value.length == 0) ? '^' : '^('+ e.value.join('|') +')$';
+          rexp = (e.value.length == chart.akeys.length) //|| e.value.length == 0) 
+                  ? '^' : '^('+ e.value.join('|') +')$';
           opt = chart.getOption();
           dtf = opt.dataset.find(x => x.id === 'Xtalk');
-          dtf.transform = {type: 'filter', config:
-              {dimension: 'XkeyX', reg: rexp } }
-          chart.filk = e.value.map(x=>Number(x)).sort((a, b) => a - b);
+          //dtf.transform = {type:'filter', config: {dimension: 'XkeyX', reg: rexp } }
+          dtf.transform.config.reg = rexp;
+          // chart.filk = e.value.map(x=>Number(x)).sort((a, b) => a - b);
+          chart.filk = e.value.sort((a, b) => a - b);
           chart.setOption(opt, false);
       	});
   	
@@ -303,7 +311,11 @@ ecfun = {
     	  return true;
   },
   
-  fs: false,   // fullscreen flag Y/N
+  geojson: null,
+  geofill: 0,
+  geoz2: 0,
+  zoom: {s: 0, e: 100 },  // dataZoom values
+  fs: false,              // fullscreen flag Y/N
   fscreen: function(hwid) {
     // see also window.onresize
     function GoInFullscreen(element) {
@@ -363,8 +375,25 @@ ecfun = {
       elem = loty; 
     });
     return vv;
-  }
+  },
 
+  labelsInside: function(params) {
+    // labelLayout= htmlwidgets::JS("(params) => ecfun.labelsInside(params)")) 
+    // https://github.com/apache/echarts/issues/17828   thanks to @plainheart
+    if (hwid=='') return null;   // single chart only (TODO: many)
+    dchart = get_e_charts(hwid);
+    const chartWidth = dchart.getWidth();
+    const labelRect = params.labelRect;
+    const labelX = labelRect.x;
+    const labelWidth = labelRect.width;
+    const overflow = labelWidth + labelX > chartWidth;
+    return {
+      x: overflow ? chartWidth - labelWidth : labelX,
+      verticalAlign: overflow ? 'top' : 'middle',
+      dy: overflow ? -3 : 0
+    }
+  }
+  
 };
 
 if (HTMLWidgets.shinyMode) {

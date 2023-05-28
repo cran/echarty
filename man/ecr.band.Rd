@@ -4,18 +4,19 @@
 \alias{ecr.band}
 \title{Area band}
 \usage{
-ecr.band(df = NULL, lower = NULL, upper = NULL, type = "polygon", ...)
+ecr.band(df = NULL, lower = NULL, upper = NULL, type = "stack", ...)
 }
 \arguments{
 \item{df}{A data.frame with lower and upper numerical columns and first column with X coordinates.}
 
-\item{lower}{The column name(string) of band's lower boundary.}
+\item{lower}{The column name of band's lower boundary (string).}
 
-\item{upper}{The column name(string) of band's upper boundary.}
+\item{upper}{The column name of band's upper boundary (string).}
 
-\item{type}{Type of rendering  \cr \itemize{
-\item 'stack' - by two \href{https://echarts.apache.org/en/option.html#series-line.stack}{stacked lines}
-\item 'polygon' - by drawing a polygon as polyline (default). Warning: cannot be zoomed!
+\item{type}{Type of rendering
+\itemize{
+\item 'stack' - by two \href{https://echarts.apache.org/en/option.html#series-line.stack}{stacked lines} (default)
+\item 'polygon' - by drawing a polygon as polyline from upper/lower points.
 }}
 
 \item{...}{More parameters for \href{https://echarts.apache.org/en/option.html#series-line.type}{serie}}
@@ -27,21 +28,26 @@ A list of one serie when type='polygon', or two series when type='stack'
 A 'custom' serie with lower and upper boundaries
 }
 \details{
-When type='polygon', coordinates of the two boundaries are chained into a polygon and displayed as one.\cr
-When type='stack', two \emph{stacked} lines are drawn, one with customizable areaStyle. The upper boundary coordinates should be values added on top of the lower boundary coordinates.\cr
-Type 'stack' needs \emph{xAxis} to be of type 'category'.
+\itemize{
+\item type='stack': two \emph{stacked} lines are drawn, one with customizable areaStyle. The upper boundary coordinates are values added on top of the lower boundary coordinates.\cr
+\emph{xAxis} is required to be of type 'category'.
+\item type='polygon': coordinates of the two boundaries are chained into a polygon and displayed as one. Tooltips do not show upper band values.
+}
+Optional parameter \emph{name}, if given, will show up in legend. Legend will merge all series with the same name into one item.
 }
 \examples{
-if (interactive()) {
-df <- airquality |> mutate(lwr= round(Temp-Wind*2),
-                           upr= round(Temp+Wind*2),
-                           x= paste0(Month,'-',Day) ) |>
-                    relocate(x,Temp)
-bands <- ecr.band(df, 'lwr', 'upr', type='stack',
-                  name='stak', areaStyle= list(opacity=0.4))
-df |> ec.init(load='custom',
+df <- airquality |> dplyr::mutate(
+    lwr= round(Temp-Wind*2),
+    upr= round(Temp+Wind*2),
+      x= paste0(Month,'-',Day) ) |>
+  dplyr::relocate(x, Temp)
+bands <- ecr.band(df, 'lwr', 'upr', # type='stack',
+                  name= 'stak', areaStyle= list(opacity=0.4))
+df |> ec.init( load= 'custom',
    legend= list(show= TRUE),
-   xAxis= list(type='category', boundaryGap=FALSE),
+   dataZoom= list(type= 'slider'),
+   toolbox= list(feature= list(dataZoom= list(show= TRUE))),
+   xAxis= list(type= 'category', boundaryGap= FALSE),
    series= list(
      list(type='line', color='blue', name='line'),
      bands[[1]], bands[[2]]
@@ -50,8 +56,7 @@ df |> ec.init(load='custom',
      formatter= ec.clmn(
         'high <b>\%@</b><br>line <b>\%@</b><br>low <b>\%@</b>',
                   3.3, 1.2, 2.2)
-     )  # 3.3= upper_serie_index +.+ index_of_column_inside
+   )  # 3.3= upper_serie_index +.+ index_of_column_inside
 )
-}
 
 }

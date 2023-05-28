@@ -1,6 +1,38 @@
 # history of package _echarty_
 
-## v.1.5.0 in development
+## v.1.5.4  latest, in development
+
+- _ec.util_ command 'layout' updated 
+- changes in axis names preset, _ec.clmn_ for empty values
+
+## v.1.5.3
+
+- upgrade ECharts to v.5.4.2
+- _ec.util_ support for map GeoJSON objects, see test-renderers.R
+- _ec.init_ new parameter _xtKey_ for crosstalk (ID-column name)
+- code cleanup in _ecr.band_
+- expand auto-generated axes names to multiple
+
+## v.1.5.2
+
+- _ec.init_ to set default xAxis/yAxis names from _df_
+- _ec.clmn_ accepts JS functions in parameter _col_
+- _ec.util_ new command 'button' to run JS function
+- fix _tabset_ bug introduced in v.1.5.1
+
+## v.1.5.1 
+
+- upgrade ECharts to v.5.4.1
+- remove redundant dependencies, only 3 used now
+- _ecr.band_ default type changed from 'polygon' to 'stack'
+- _ec.data_ type 'boxplot' remodeled and jitter-scatter added
+- new _series.param_ in _ec.init_ for additional parameters for preset series
+- make _ec.util_ tabset responsive by resizing tabs onclick
+- fix _visualMap_ piecewise dimension R-counts
+- set _visualMap_ default min/max values from df
+- _echarty.js_: add built-in 'mouseout' event
+
+## v.1.5.0  on CRAN
 
 - upgrade ECharts to v.5.4.0
 - built with R v.4.2.2
@@ -15,7 +47,7 @@
 - new _load='lottie'_, lotties support now built-in 
 - reorganize crosstalk code
 
-## v.1.4.7 on CRAN
+## v.1.4.7
 
 - _ec.util_: add POLYGON/MULTIPOINT, rename param 'type' to 'cmd', new _sf.unzip_
 - _ec.util_: new cmd='tabset' to show multiple charts in tabs
