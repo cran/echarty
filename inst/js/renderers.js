@@ -1,90 +1,159 @@
 //  JS renderers for error bars, bands, geoJson
 //  Prefix 'ri' stands for 'renderItem' - the calling origin.
-	
+
 /*
-  Error Bar support for grouped bars, barGap and barCategoryGap
-     Notes:	
-  Error bars can have chart bars, lines and scatter points as "hosts".
-  Error bars will "attach" to their host series and show/hide 
-  together when user clicks on a legend button.	
-  Attaching is done automatically (by type), or by name.
-  Error bars will inherit color from their host bar, blending with them.
-  Therefore it is preferable to use a different color, default is 'black'.
-  ecr.ebars will add a legend if none is found.
-  ecr.ebars should be set at the end, after all other series.
-  ecr.ebars are custom series, so ec.init(load='custom') is required.
+  Error bars attach to "host" series - bar,line or scatter. 
+  Attaching is done automatically by type, or by name.
+  Show/hide together with host series when user clicks on a legend button.	
+  Inherit color from the host series, so it is recommended to use a custom color(itemStyle.color), default is 'brown'.
+  They add a legend if none is found.
+  Error bars should be set at the end, after all other series.
+  They are custom series, so ec.init(load='custom') is required.
 
+  Support for horizontal/vertical layouts, use 'encode' for column selection (data or dataset)
+  Support for GROUPED series, also for barGap and barCategoryGap.
+  Limitations for grouped host bars: 
+    Error bars cannot have their own names - will disrupt positioning
+    Legend select/deselect will not re-position error bars
 */
-function riErrorBar(params, api) {
 
-  // input oss contains 
-  //   [last.barGap, last.barCategoryGap, series.count, ends.half.width]
-  let oss = JSON.parse(sessionStorage.getItem('ErrorBar.oss'));
-  if (oss===null || !Object.keys(oss).length) return null;   // needs 4 input values
+function riErrBars(params, api) {
+  const group = { type: 'group', children: [] };
+  chart = get_e_charts(echwid);
+  halfWidth = api.style().lineDashOffset;
+  let encode = params.encode;
+  isHor = encode['x'].length > encode['y'].length;
+  baseDimIdx = isHor ? 1 : 0
+  let coordDims = ['x', 'y'];
 
-  let totSeries = Number(oss[2]);
-
-  let xValue = api.value(0);  // data order is x,y,low,high
-  let highPoint = api.coord([xValue, api.value(3)]);
-  let lowPoint = api.coord([xValue, api.value(2)]);
-  let endsWidth = Number(oss[3]);  //api.size([1, 0])[0] * 0.1;
-	
-  let csil = api.currentSeriesIndices().length / 2;
-	// idx is index of related main bar
-  let idx = params.seriesIndex - (params.seriesIndex < totSeries ? 0 : totSeries);	
-
-  if (csil > 1 && totSeries > 1) {
-  	let bgm = oss[0];
-  	let bcgm = oss[1];
-  	let olay = { count: csil };
-  	olay.barGap = bgm!=='' ? bgm : '30%';		// '30%' is default for e_bar
-  	olay.barCategoryGap = bcgm!=='' ? bcgm : '20%';
-  	let barLayouts = api.barLayout(olay);		// will be csil # of barLayouts
-  	
-  	if (barLayouts) {
-	  	let mbar = 0;
-	  	api.currentSeriesIndices().some( (item, index) => {
-	  		if (item == idx) {
-	  			highPoint[0] += barLayouts[mbar].offsetCenter;
-	  			// endsWidth = barLayouts[mbar].width /2;
-	  			return true;
-	  		}
-	  		mbar++;
-	  		return mbar >= csil;  // false until true
-	  	});
-  	}
-  }
-  lowPoint[0] = highPoint[0];
-  
-  var style = api.style({
+    let otherDimIdx = 1 - baseDimIdx;
+    let baseValue = api.value(encode[coordDims[baseDimIdx]][0]);
+    let param = [];
+    param[baseDimIdx] = baseValue;
+    param[otherDimIdx] = api.value(encode[coordDims[otherDimIdx]][1]);
+    let highPoint = api.coord(param);
+    param[otherDimIdx] = api.value(encode[coordDims[otherDimIdx]][2]);
+    let lowPoint = api.coord(param);
+    var style = api.style({
       stroke: api.visual('color'),
-      fill: null
-  });
-  return {
-      type: 'group',
-      children: [{
-          type: 'line',
-          shape: {
-              x1: highPoint[0] - endsWidth, y1: highPoint[1],
-              x2: highPoint[0] + endsWidth, y2: highPoint[1]
-          },
-          style: style
-      }, {
-          type: 'line',		// vertical
-          shape: {
-              x1: highPoint[0], y1: highPoint[1],
-              x2: lowPoint[0], y2: lowPoint[1]
-          },
-          style: style
-      }, {
-          type: 'line',
-          shape: {
-              x1: lowPoint[0] - endsWidth, y1: lowPoint[1],
-              x2: lowPoint[0] + endsWidth, y2: lowPoint[1]
-          },
-          style: style
-      }]
-  };
+      fill: undefined
+    });
+    
+    offset = 0;  // calc bar offset
+    xx = isHor ? 0 : 1; yy = 1 - xx;
+    sers = chart.getModel().getSeries().filter(o => o.subType!='custom');
+    if (sers.length > 0) {
+      tmp = sers.filter(o => o.subType=='bar')
+      if (tmp.length > 0) {
+        tmp = tmp.find(o => o.name === params.seriesName);
+        if (tmp) {
+          // idx is index of related bar (by name)
+          idx = tmp.seriesIndex;
+        	bgm = bcgm = null;
+          tmp = sers.findLast(o => o.option && o.option.barCategoryGap != undefined);
+          if (tmp) {
+            bgm = tmp.option.barGap;
+            bcgm = tmp.option.barCategoryGap;
+          }
+        	olay = { count: sers.length };
+        	if (bgm) olay.barGap = bgm //!=='' ? bgm : '30%' is default for e_bar
+        	if (bcgm) olay.barCategoryGap = bcgm //!=='' ? bcgm : '20%';
+        	barLayouts = api.barLayout(olay);
+      	  offset = barLayouts[idx].offsetCenter;
+        }
+      }
+    }
+    group.children.push(
+      {
+        type: 'line', x: xx*offset, y: yy*offset,
+        transition: ['shape'],
+        shape: makeShape(
+          baseDimIdx,
+          highPoint[baseDimIdx] - halfWidth,
+          highPoint[otherDimIdx],
+          highPoint[baseDimIdx] + halfWidth,
+          highPoint[otherDimIdx]
+        ),
+        style: style
+      },
+      {
+        type: 'line', x: xx*offset, y: yy*offset,
+        transition: ['shape'],
+        shape: makeShape(
+          baseDimIdx,
+          highPoint[baseDimIdx],
+          highPoint[otherDimIdx],
+          lowPoint[baseDimIdx],
+          lowPoint[otherDimIdx]
+        ),
+        style: style
+      },
+      {
+        type: 'line', x: xx*offset, y: yy*offset,
+        transition: ['shape'],
+        shape: makeShape(
+          baseDimIdx,
+          lowPoint[baseDimIdx] - halfWidth,
+          lowPoint[otherDimIdx],
+          lowPoint[baseDimIdx] + halfWidth,
+          lowPoint[otherDimIdx]
+        ),
+        style: style
+      }
+    );
+
+  function makeShape(baseDimIdx, base1, value1, base2, value2) {
+    var shape = {};
+    shape[coordDims[baseDimIdx] + '1'] = base1;
+    shape[coordDims[1 - baseDimIdx] + '1'] = value1;
+    shape[coordDims[baseDimIdx] + '2'] = base2;
+    shape[coordDims[1 - baseDimIdx] + '2'] = value2;
+    return shape;
+  }
+  return group;
+}
+riErrorBar = riErrBars  // legacy name
+
+/*
+  error bar function for simple data without grouping
+  usage: renderItem= htmlwidgets::JS("riErrBarSimple")
+*/
+function riErrBarSimple(params, api) {
+    var xValue = api.value(0);
+    var highPoint = api.coord([xValue, api.value(1)]);
+    var lowPoint = api.coord([xValue, api.value(2)]);
+    //var halfWidth = api.size([1, 0])[0] * 0.1;
+    var halfWidth = (api.value(1)-api.value(2)) * 0.2;
+    var style = api.style({
+        stroke: api.visual('color'),
+        fill: null
+    });
+
+    return {
+        type: 'group',
+        children: [{
+            type: 'line',
+            shape: {
+                x1: highPoint[0] - halfWidth, y1: highPoint[1],
+                x2: highPoint[0] + halfWidth, y2: highPoint[1]
+            },
+            style: style
+        }, {
+            type: 'line',
+            shape: {
+                x1: highPoint[0], y1: highPoint[1],
+                x2: lowPoint[0], y2: lowPoint[1]
+            },
+            style: style
+        }, {
+            type: 'line',
+            shape: {
+                x1: lowPoint[0] - halfWidth, y1: lowPoint[1],
+                x2: lowPoint[0] + halfWidth, y2: lowPoint[1]
+            },
+            style: style
+        }]
+    };
 }
 
 /*
@@ -118,47 +187,6 @@ function riPolygon(params, api) {
             fill: color,
             stroke: echarts.color.lift(color)
         })
-    };
-}
-
-/*
-  error bar function for simple data without grouping
-  usage: renderItem= htmlwidgets::JS("riErrBarSimple")
-*/
-function riErrBarSimple(params, api) {
-    var xValue = api.value(0);
-    var highPoint = api.coord([xValue, api.value(1)]);
-    var lowPoint = api.coord([xValue, api.value(2)]);
-    var halfWidth = api.size([1, 0])[0] * 0.1;
-    var style = api.style({
-        stroke: api.visual('color'),
-        fill: null
-    });
-
-    return {
-        type: 'group',
-        children: [{
-            type: 'line',
-            shape: {
-                x1: highPoint[0] - halfWidth, y1: highPoint[1],
-                x2: highPoint[0] + halfWidth, y2: highPoint[1]
-            },
-            style: style
-        }, {
-            type: 'line',
-            shape: {
-                x1: highPoint[0], y1: highPoint[1],
-                x2: lowPoint[0], y2: lowPoint[1]
-            },
-            style: style
-        }, {
-            type: 'line',
-            shape: {
-                x1: lowPoint[0] - halfWidth, y1: lowPoint[1],
-                x2: lowPoint[0] + halfWidth, y2: lowPoint[1]
-            },
-            style: style
-        }]
     };
 }
 
@@ -269,3 +297,23 @@ function riGeoJson(params, api) {
       })
   }
 }
+
+
+/*
+ ------------- Licence -----------------
+
+ Original work Copyright 2023 Larry Helgason
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ ---------------------------------------
+*/

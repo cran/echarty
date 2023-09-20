@@ -1,9 +1,24 @@
 # history of package _echarty_
 
-## v.1.5.4  latest, in development
+## v.1.6.0  latest, in development
+
+- _ec.paxis_ could be chained now
+- _ec.data_ format='boxplot' with optional outliers
+- _ecr.bars_ with better alignment and horizontal layout
+
+## v.1.5.4.03
+
+- upgrade ECharts to v.5.4.3, built with R v.4.3.1
+- breaking change in _ec.init_ signature
+- improved _ec.inspect_ and _ec.fromJson_
+- fixed small bugs and improved code
+- added more tests
+
+## v.1.5.4  CRAN
 
 - _ec.util_ command 'layout' updated 
 - changes in axis names preset, _ec.clmn_ for empty values
+- problem running Shiny in R console: _No handler registered for mouseover_
 
 ## v.1.5.3
 
