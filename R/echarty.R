@@ -5,11 +5,14 @@
 #' echarty provides a lean interface between R and Javascript library ECharts.\cr
 #' With only two major commands (_ec.init_ and _ec.upd_), it can trigger multiple native ECharts options to build a chart. \cr
 #' The benefits - learn a very limited set of commands, and enjoy the **full functionality** of ECharts.
-#' 
-#' @includeRmd vignettes/info.Rmd
 #'
+#' @includeRmd vignettes/echarty.Rmd
+#' 
 #' @name -- Introduction --
 NULL
+
+the <- new.env(parent = emptyenv())
+the$.ecv.colnames <- NULL
 
 #' Initialize command
 #'
@@ -121,7 +124,8 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   opts$useDirtyRect <- opts$elementId <- opts$xtKey <- NULL
   noAxis <- c('radar','parallel','map','gauge','pie','funnel','polar', #'graph', 
               'sunburst','tree','treemap','sankey')
-  
+  .setColnm()
+
   doType <- function(idx, axx) {
     # get one axis type & name
     # idx= column index, axx= axis
@@ -255,7 +259,9 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   if (!is.null(df)) {
     # if data.frame given, assign to dataset regardless of parameter 'preset'
     stopifnot('ec.init: df must be a data.frame'= inherits(df, 'data.frame'))
-    
+    # add var for ec.clmn
+    .setColnm(colnames(df))
+
     # skip default group settings on map timeline
     if (!is.null(tl.series) && paste0(tl.series$type,'')=='map') ctype <- NULL
     
@@ -416,6 +422,8 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
       # WARN: map will duplicate if series have map='world' too
       if (!'geo' %in% names(wt$x$opts))
         wt$x$opts$geo = list(map='world', roam=TRUE)
+      else
+        wt$x$opts$geo = .merlis(wt$x$opts$geo, list(map='world'))
       # if (!is.null(df))  # cancelled: don't know if df first 2 cols are 'lng','lat'
       #   wt$x$opts$geo$center= c(mean(unlist(df[,1])), mean(unlist(df[,2])))
     }
@@ -867,6 +875,7 @@ ecr.ebars <- function(wt, encode=list(x=1, y=c(2,3,4)), hwidth=6, ...) {
             out <- which(ds$dimensions %in% out)
           else {
             if (!is.null(ds$sourceHeader) && ds$sourceHeader)
+              # series.seriesLayoutBy
               out <- which(ds$source[[1]] %in% out)
             else {
               if (!class(ds$source[[1]]) %in% class(ds$source[[2]]))
@@ -876,12 +885,14 @@ ecr.ebars <- function(wt, encode=list(x=1, y=c(2,3,4)), hwidth=6, ...) {
             }
           }
         }
-      } else
+      } 
+      else
         out <- which(liss$dm %in% out)  # from data
     }
     out
   }
-  encode$y <- enc2num(encode$y, tmp[[1]])   # assumes all series from same dataset
+  # assuming all attached series from same dataset
+  encode$y <- enc2num(encode$y, tmp[[1]])
   encode$x <- enc2num(encode$x, tmp[[1]])
   # set correct axis to type 'category' (char or factor)
   enc <- wt$x$opts$dataset[[1]]$source[[2]]$encode
@@ -1100,7 +1111,7 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
       ans <- TRUE
     if (ans) {
       try(withCallingHandlers(
-        download.file(source, ffull), # method = "libcurl"),
+        download.file(source, ffull, quiet=TRUE), # method = "libcurl"),
         error = function(w) { ans <- FALSE },
         warning = function(w) { ans <- FALSE }
         #cat('ec.plugjs Error:', sub(".+HTTP status was ", "", w, source))
@@ -1155,18 +1166,27 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
   opa
 }
 
-# merge named lists
+# merge named lists: list OR list.of.lists like series
 .merlis <- function(l1, l2) {
 	if (!inherits(l1, 'list')) l2
   else if (length(l1)==0) l2
 	else if (!inherits(l2, 'list')) l1
   else if (length(l2)==0) l1
-	else if (inherits(l1[[1]], 'list'))     # list of lists
+	#else if (inherits(l1[[1]], 'list'))     # list of lists
+	else if (inherits(l1[1],'list') && is.null(names(l1[1])))     # list of lists
 		lapply(l1, \(x) {
 			c(x, l2)[!duplicated(c(names(x), names(l2)), fromLast= TRUE)]
 		})
 	else
 		c(l1, l2)[!duplicated(c(names(l1), names(l2)), fromLast= TRUE)]
+}
+
+# manage colnames for ec.clmn
+.getColnm <- function() { the$.ecv.colnames }
+.setColnm <- function(vv=NULL) {
+  old <- the$.ecv.colnames
+  the$.ecv.colnames <- vv
+  invisible(old)
 }
 
 if (interactive()) {
@@ -1189,7 +1209,6 @@ if (interactive()) {
 #  ------------- Global Options -----------------
 #' 
 #' For info on options and prefixes, see [-- Introduction --].
-
 
 
 #  ------------- Licence -----------------
