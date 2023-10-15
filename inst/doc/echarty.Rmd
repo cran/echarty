@@ -2,7 +2,7 @@
 title: "Introduction to echarty"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{echarty}
+  %\VignetteIndexEntry{Introduction to echarty}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,8 +16,8 @@ knitr::opts_chunk$set(
 
 ## Description
 
-**echarty** provides a lean interface between R and Javascript library ECharts. 
-We encourage users to follow the original ECharts documentation to construct charts with echarty.  
+**echarty** provides a lean interface between R and Javascript library [ECharts](https://echarts.apache.org/en/index.html). 
+We encourage users to follow the original ECharts [API documentation](https://echarts.apache.org/en/option.html) to construct charts with echarty.  
 The main command **ec.init** can set multiple native ECharts options to build a chart.  
 The benefits - learn a very limited set of commands, and enjoy the **full functionality** of ECharts.
 

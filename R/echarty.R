@@ -170,8 +170,19 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
         if (is.character(ss$encode$y)) tmp$y <<- c(tmp$y, ss$encode$y[1])
       }
     })
-    if (!is.null(tmp$x)) x$opts$xAxis$name <<- trimws(paste(unique(tmp$x), collapse=','))
-    if (!is.null(tmp$y)) x$opts$yAxis$name <<- trimws(paste(unique(tmp$y), collapse=','))
+
+    if (!is.null(tmp$x)) {
+      if (is.null(x$opts$xAxis$name))
+        x$opts$xAxis$name <<- trimws(paste(unique(tmp$x), collapse=','))
+      tt <- tmp$x[1]
+      colX <<- if (is.numeric(tt)) tt else which(colnames(df)==tt)[1]
+    }
+    if (!is.null(tmp$y)) {
+      if (is.null(x$opts$yAxis$name))
+        x$opts$yAxis$name <<- trimws(paste(unique(tmp$y), collapse=','))
+      tt <- tmp$y[1]
+      colY <<- if (is.numeric(tt)) tt else which(colnames(df)==tt)[1]
+    }
   }
   xyNamesCS <- function(ser) {
     # no coordinateSystem = pie,funnel,gauge, sunburst/tree/treemap/sankey (graph)
@@ -339,7 +350,7 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   
   if (!is.null(x$opts$series) && !is.null(series.param)) {
     x$opts$series <- .merlis(x$opts$series, series.param)
-    # TODO: not 'x','y'
+    # TODO: when names not 'x','y'
     tmp <- series.param$encode
     if (!is.null(tmp)) {
       if (is.numeric(tmp$x)) colX <- tmp$x
@@ -352,10 +363,10 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   if (preset) {
     # TODO: set axis type from series.data
     # set X,Y axes type & name
-    x$opts$xAxis <- doType(colX, x$opts$xAxis)
-    x$opts$yAxis <- doType(colY, x$opts$yAxis)
     axNamesEnc(x$opts$series)
     axNamesEnc(list(tl.series))
+    x$opts$xAxis <- doType(colX, x$opts$xAxis)
+    x$opts$yAxis <- doType(colY, x$opts$yAxis)
       
     if (!is.null(x$opts$series)) {
       if (!is.null(x$opts$series[[1]]$type)) {
@@ -1189,23 +1200,6 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
   invisible(old)
 }
 
-if (interactive()) {
-  if (requireNamespace("shiny", quietly= TRUE)) {
-    
-    # for Shiny actions
-    .onAttach <- function(libname, pkgname) {
-        shiny::registerInputHandler('echartyParse', function(data, ...) {
-          jsonlite::fromJSON(jsonlite::toJSON(data, auto_unbox = TRUE))
-        }, force = TRUE)
-    }
-    
-    .onLoad <- function(libname, pkgname) {
-        shiny::registerInputHandler('echartyParse', function(data, ...) {
-          jsonlite::fromJSON(jsonlite::toJSON(data, auto_unbox = TRUE))
-        }, force = TRUE)
-    }
-  }
-}
 #  ------------- Global Options -----------------
 #' 
 #' For info on options and prefixes, see [-- Introduction --].
