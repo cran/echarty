@@ -35,7 +35,7 @@
 #' \verb{   }... - optional custom series attributes like _itemStyle_\cr
 #' \verb{   }ppfill - optional fill color like '#F00', OR NULL for no-fill, for all Points and Polygons\cr
 #' \verb{   }nid - optional feature property for item name used in tooltips\cr
-#' \verb{   }optional geoJSON _feature properties_: color, ppfill, lwidth, ldash, radius(for points)\cr
+#' \verb{   }optional geoJson _feature properties_: color, ppfill, lwidth, ldash, radius(for points)\cr
 #' **cmd = 'layout'** \cr
 #' \verb{   }multiple charts in table-like rows/columns format\cr
 #' \verb{   }... - List of charts\cr
@@ -45,8 +45,6 @@
 #' \verb{   }For greater number of charts _ec.util(cmd='layout')_ comes in handy\cr
 #' **cmd = 'tabset'** \cr
 #' \verb{   }... - a list name/chart pairs like \emph{n1=chart1, n2=chart2}, each tab may contain a chart.\cr
-#' \verb{   }width -  optional width of tabs in pixels\cr
-#' \verb{   }height - optional height of tabs in pixels\cr
 #' \verb{   }tabStyle - tab style string, see default \emph{tabStyle} variable in the code\cr
 #' \verb{   }Returns A) \link[htmltools]{tagList} of tabs when in a pipe without '...' params, see example\cr
 #' \verb{   }Returns B) \link[htmltools]{browsable} when '...' params are provided by user\cr
@@ -288,9 +286,9 @@ ec.util <- function( ..., cmd='sf.series', js=NULL) {
     },
     
     'tabset'= {
-      width <- height <- tabStyle <- NULL   # CRAN check fix
-      do.opties(c('width','height','tabStyle'), 
-                list('100%', 400, "<style>
+      tabStyle <- NULL   # CRAN check fix
+      do.opties(c('tabStyle'), 
+                list("<style>
 /*	CSS for the main interaction */
 .tabset > input[type='radio'] {
  position: absolute;
@@ -374,8 +372,8 @@ body { padding: 10px; }
         tset <- htmltools::tagAppendChildren(tset, 
             tinp, htmltools::tags$label(`for`=tid, n))
         cont <- unname(opts[n]) 
-        cont[[1]]$width <- width
-        cont[[1]]$height <- height
+        #cont[[1]]$width <- width
+        #cont[[1]]$height <- height
         tpans <- htmltools::tagAppendChild(tpans, 
             htmltools::tags$section(id=n, class='tab-panel', cont))
         tout <- htmltools::tagAppendChild(tset, tpans)
@@ -435,7 +433,7 @@ body { padding: 10px; }
         else oo
       })
       # series types should be different for morph options
-      defaultHandler <- htmlwidgets::JS("
+      clickHandler <- htmlwidgets::JS("
     function(event) {
         opt= this.getOption();
         keep= opt.morph;
@@ -455,7 +453,7 @@ body { padding: 10px; }
       out$x$opts$morph <- opts
       if (is.null(js))
         out$x$on <- list(list(
-          event= 'mouseover', handler= defaultHandler
+          event= 'click', handler= clickHandler
         ))
       out    
     },
@@ -568,7 +566,7 @@ body { padding: 10px; }
 #'  Additional grouping is supported on a column after the second. Groups will show in the legend, if enabled.\cr
 #'  Returns a `list(dataset, series, xAxis, yAxis)` to set params in [ec.init]. 
 #'  Make sure there is enough data for computation, 4+ values per boxplot.\cr
-#'  `format='treeTT'` expects data.frame _df_ columns _pathString,value,(optional itemStyle)_ for \link[data.tree]{FromDataFrameTable}.\cr
+#' `format='treeTT'` expects data.frame _df_ columns _pathString,value,(optional itemStyle)_ for \link[data.tree]{FromDataFrameTable}.\cr
 #'  It will add column 'pct' with value percentage for each node. See Details.
 #' @seealso some live \href{https://rpubs.com/echarty/data-models}{code samples}
 #' 
@@ -654,8 +652,7 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
   
   if (format=='treePC') {
     # for sunburst,tree,treemap
-    if (# !all(colnames(df) == c('parents', 'children', 'value')) ||
-        !all(unlist(unname(lapply(as.list(df[,1:3]), class))) == 
+    if (!all(unlist(unname(lapply(as.list(df[,1:3]), class))) == 
              c('character','character','numeric')) )
       stop('ec.data: df columns need to be in order (parents, children, value), only value is numeric', call. = FALSE)
     
@@ -766,7 +763,7 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
           name= tmp[[i]][[grpcol]][1], 
           #tooltip= list(formatter= tbox), 
           encode= list(tooltip= ttip),
-          type= 'boxplot', datasetIndex= i+length(tmp)-1) ))
+          type= 'boxplot', datasetIndex= i+length(tmp)) ))  # will be decremented
       }
 	    axe <- paste0("function(v) { return ['",axe,"'][v]; }")
 	   
@@ -899,7 +896,9 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
 #' * \emph{%L@} will display a number in locale format, like '12,345.09'.\cr
 #' * \emph{%LR@} rounded number in locale format, like '12,345'.\cr
 #' * \emph{%R@} rounded number, like '12345'.\cr
+#' * \emph{%R2@} rounded number, two digits after decimal point.\cr
 #' * \emph{%M@} marker in serie's color.\cr
+#' Notice that tooltip _formatter_ will work for _trigger='item'_, but not for _trigger='axis'_ when there are multiple value sets.
 #' 
 #' @examples
 #' tmp <- data.frame(Species = as.vector(unique(iris$Species)),
@@ -1146,7 +1145,8 @@ ec.theme <- function (wt, name, code= NULL)
 #'  a character vector.
 #'
 #' @details Must be invoked or chained as last command.\cr
-#' target='full' will export all JavaScript custom code, ready to be used on import.
+#' target='full' will export all JavaScript custom code, ready to be used on import.\cr
+#' See also [ec.fromJson].
 #'
 #' @examples
 #' # extract JSON
@@ -1159,7 +1159,7 @@ ec.theme <- function (wt, name, code= NULL)
 #' @export
 ec.inspect <- function(wt, target='opts', ...) {
 
-  stopifnot("ec.inspect: target only 'opts', 'data' or 'full'"= target %in% c('opts','data','full'))
+  stopifnot("ec.inspect: target to be 'opts', 'data' or 'full'"= target %in% c('opts','data','full'))
 	if (target=='full') {
 	  jjwt <- jsonlite::serializeJSON(wt)
 	  opts <- list(...)
@@ -1223,7 +1223,7 @@ ec.inspect <- function(wt, target='opts', ...) {
 #' @return An _echarty_ widget.
 #' 
 #' @details _txt_ could be either a list of options (x$opts) to be set by \href{https://echarts.apache.org/en/api.html#echartsInstance.setOption}{setOption},\cr
-#'  OR an entire _htmlwidget_ generated thru [ec.inspect] when _target='full'_.\cr
+#'  OR an entire _htmlwidget_ generated thru [ec.inspect] with _target='full'_.\cr
 #'  The latter imports all JavaScript functions defined by the user.
 #' 
 #' @examples

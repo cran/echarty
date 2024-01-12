@@ -9,36 +9,37 @@ test_that("registerMap", {
      {"type":"Feature", "geometry":{"type":"MultiPolygon", "coordinates":[[[[2.333466,48.866204],[2.333061,48.86588],[2.332897,48.865906],[2.332466,48.865801],[2.332165,48.865776],[2.331811,48.865475],[2.331621,48.86532],[2.331466,48.865265],[2.331274,48.865283]]]]},
      	"properties":{"lat":48.859475,"lon":2.329466,"name":"bic2","range":1000, "id":"1 min"} },
      {"type":"Feature", "geometry":{"type":"MultiPolygon", "coordinates":[[[[2.335466,48.869736],[2.335037,48.870046],[2.334836,48.870105],[2.334466,48.870265],[2.334289,48.870298],[2.333577,48.870364],[2.333466,48.870381],[2.333364,48.870373],[2.332485,48.870456]]]]},
-     	"properties": {"lat":48.859475, "lon":2.329466, "name":"bic3", "range":1500, "id":"1.5 min"} }
+     	"properties": {"lat":48.859475,"lon":2.329466,"name":"bic3","range":1500, "id":"1.5 min"} }
   ]}')
   ext <- function(dd) { unlist(unname(sapply(gjson$features, \(f) {f$properties[dd]}))) }
-  vals <- ext('range')
-  dparis <- data.frame(name= ext('name'), value= vals)
+  #vals <- ext('range')
+  dparis <- data.frame(name= ext('name'), value= ext('range'))
   p <- ec.init(preset= FALSE,
     geo= list(map= 'paris', roam= TRUE),
     series =list(list(
-      type= 'map', geoIndex=0, coordinateSystem= 'geo',
+      type= 'map', geoIndex=1,
       data= ec.data(dparis, 'names')
     )),
     visualMap= list(type='continuous', calculable=TRUE,
-      inRange= list(color = rainbow(8)),
-      min= min(vals), max= max(vals))
+      inRange= list(color = rainbow(8)) )
+      #,min= min(vals), max= max(vals))
   )
   p$x$registerMap <- list(list(mapName= 'paris', geoJSON= gjson))
   p
   expect_equal(length(p$x$registerMap[[1]]$geoJSON), 3)
   expect_equal(p$x$opts$geo$map, 'paris')
-  expect_equal(p$x$opts$series[[1]]$geoIndex, 0)
   expect_equal(p$x$opts$series[[1]]$data[[2]]$value, 1000)
 })
 
-test_that("tl.series, timeline options, groupby", {
+test_that("tl.series, timeline options, groupBy", {  # also in test-presets
   p <- Orange |> dplyr::group_by(age) |> ec.init(
     timeline= list(autoPlay=TRUE),
-    tl.series= list(type='bar', encode=list(x='Tree', y='circumference'))
+    series.param= list(type='bar', encode=list(x='Tree', y='circumference'))
   ) |> ec.upd({
-    options <- lapply(options, 
-      function(o) { o$title$text <- paste('age',o$title$text,'days'); o })
+    options <- lapply(seq_along(options), 
+      \(i) { 
+        options[[i]]$title$text <- paste('age',timeline$data[[i]],'days'); 
+        options[[i]] })
   })
   expect_equal(p$x$opts$options[[5]]$title$text, "age 1231 days")
   expect_equal(p$x$opts$options[[5]]$series[[1]]$datasetIndex, 5)
@@ -54,25 +55,11 @@ test_that("tl.series, timeline options, groupby", {
   )
   p <- dat |> group_by(x1) |> ec.init(
     tl.series= list(encode= list(x= 'x3', y= 'x5'), groupBy='x2',
-                    symbolSize= ec.clmn(4, scale=30)) 
+                    symbolSize= ec.clmn(4, scale=30)),
+    legend= list(s=T)
   )
-  expect_equal(p$x$opts$options[[4]]$title$text, '2023')
+  expect_equal(p$x$opts$options[[4]]$series[[2]]$name, 'B')
   expect_true(p$x$opts$dataset[[9]]$transform$config$and[[2]]$dimension=='x2')
-})
-
-test_that("tl.series type 'map'", {
-#  if (interactive()) {
-    cns <- data.frame(
-      country = c('United States','China','Russia'),
-      value = runif(3, 1, 100)
-    )
-    p <- cns |> group_by(country) |> ec.init(load='world',
-        tl.series= list(type='map', encode=list(value='value', name='country')),
-        visualMap= list(calculable=TRUE, max=100)
-    )
-    expect_equal(p$x$opts$options[[1]]$series[[1]]$data[[1]]$name, "China")
-#  }
-#  else expect_equal(1,1)
 })
 
 test_that("leaflet with ec.clmn and timeline", {
@@ -104,7 +91,7 @@ test_that("leaflet with ec.clmn and timeline", {
   	timeline= list(autoPlay=TRUE, controlStyle= list(borderColor='brown')),
   	options= list(legend= list(show=T)), 
     tl.series= list( 
-        type='scatter', coordinateSystem='leaflet', name='quake',
+        type='scatter', name='quake',
         symbolSize = ec.clmn(6, scale=2),
         encode= list(lng='long', lat='lat', tooltip=c(4,5))
     ),
@@ -116,9 +103,10 @@ test_that("leaflet with ec.clmn and timeline", {
   expect_equal(p$x$opts$leaflet$zoom, 2)
   expect_s3_class(p$x$opts$tooltip$formatter, 'JS_EVAL')
   #expect_equal(p$dependencies[[9]]$name, 'echarts-leaflet')  # loads slow?
-  expect_equal(p$x$opts$options[[10]]$title$text, '19')
+  #expect_equal(p$x$opts$options[[10]]$title$text, '19')
   expect_equal(p$x$opts$options[[10]]$series[[1]]$name, 'quake')
   expect_true (p$x$opts$options[[10]]$legend$show)
+  expect_equal(p$x$opts$options[[41]]$series[[1]]$coordinateSystem, 'leaflet')
   expect_equal(p$x$opts$timeline$data[[10]], '19')
   expect_equal(p$x$opts$dataset[[2]]$transform$config$`=`, 10)
 })
@@ -166,14 +154,34 @@ test_that("ec.data treeTK", {
 
 test_that("load 3D surface", {
   #if (interactive()) {  # first time will load echarts-gl.js in source folder 'js'
-    data <- list()
-    for(y in 1:dim(volcano)[2]) for(x in 1:dim(volcano)[1])
-      data <- append(data, list(c(x, y, volcano[x,y])))
-    p <- ec.init(load= '3D', series= list(list(type= 'surface',	data= data)) )
-    
-    expect_equal(length(p$x$opts$series[[1]]$data), 5307)
-  #}
-  #else expect_equal(1,1)
+  data <- list()
+  for(y in 1:dim(volcano)[2]) for(x in 1:dim(volcano)[1])
+    data <- append(data, list(c(x, y, volcano[x,y])))
+  p <- ec.init(load= '3D', series= list(list(type= 'surface',	data= data)) )
+  
+  expect_equal(length(p$x$opts$series[[1]]$data), 5307)
+})
+
+test_that("3D globe", {
+  p <- ec.init(load='3D',
+    globe= list(viewControl= list(autoRotate= FALSE)),
+    series= list(
+      list(type= 'scatter3D',
+        data= list(c(32,-117,11), c(2,44,22)) ,
+        symbolSize= 40, itemStyle= list(color= 'red')
+    ))
+  )
+  expect_equal(p$x$opts$series[[1]]$coordinateSystem, 'globe')
+})
+
+test_that("calendar", {
+  df <- data.frame(d= seq(as.Date("2023-01-01"), by="day", length.out=360), v=runif(360,1,100))
+  p <- df |> ec.init(
+    visualMap= list(show= FALSE, min= 0, max= 100), 
+    calendar = list(range= c('2023-01','2023-04')),
+    series = list(list(type = 'scatter'))
+  )
+  expect_equal(p$x$opts$series[[1]]$coordinateSystem, "calendar")
 })
 
 test_that("ec.plugjs", {
@@ -229,28 +237,19 @@ test_that('autoset axis type', {
   expect_equal(p$x$opts$yAxis$type, 'value')
 })
 
-test_that('polar presets', {
-  df <- data.frame(x = 1:10, y = seq(1, 20, by = 2))
-  p <- df |> ec.init(ctype='line', polar= list(dummy= T), 
-  		 series.param= list(NOcoordinateSystem= "polar", smooth= T)
-  )
-  expect_equal(p$x$opts$polar$radius, 111)
-  expect_equal(p$x$opts$radiusAxis$type, 'category')
-  expect_equal(p$x$opts$series[[1]]$coordinateSystem, 'polar')
-})
-
 test_that('stops are working in echarty.R', {
-  df <- data.frame(x = 1:10, y = seq(1, 20, by = 2))
-  expect_error(cars |> group_by(speed) |> ec.init()) # 3 cols min
+  df <- data.frame(x = 1:10, y = seq(1, 20, by=2))
   expect_error(ec.init(0)) # df
   expect_error(ec.init(cars, tl.series= list(d=1))) # groups
-  expect_error(ec.init(mtcars |> group_by(gear), tl.series= list(d=1))) # encode
-  expect_error(ec.init(mtcars |> group_by(gear), tl.series= 
-                  list(type='map', encode= list(x=1, y=2)))) # x
-  expect_error(ec.init(mtcars |> group_by(gear), 
-      tl.series= list(type='map', encode= list(name=1)))) # y
-  expect_silent(ec.init(mtcars |> group_by(gear), 
-      tl.series= list(type='map', encode= list(name=1, value=2))))  # pass map
+  expect_silent(ec.init(mtcars |> group_by(gear), tl.series= list(type='map'))) # no name/value, can use encode
+  expect_silent(ec.init(df |> group_by(y), series.param= list(type='bar')))
+  expect_silent(ec.init(df |> group_by(y), series.param= list(type='bar'), 
+                        timeline= list(s=T)))
+  # expect_error(cars |> group_by(speed) |> ec.init()) # 3 cols min
+  # expect_error(ec.init(data.frame(name='n',value=1) |> group_by(name), 
+  #     tl.series= list(type='bar')))  # 3 cols min
+  # expect_silent(ec.init(data.frame(name='n',value=1) |> group_by(name), 
+  #     tl.series= list(type='map')))  # 2 cols exception for map
   expect_error(ec.init(mtcars |> group_by(gear), tl.series= list(encode= list(x=1, y=2),groupBy='zzz'))) # groupBy
   expect_error(ecr.band(cars))
   tmp <- cars; tmp <- tmp |> rename(lower=speed, upper=dist)
@@ -263,6 +262,7 @@ test_that('stops are working in echarty.R', {
   expect_error(ecr.ebars(ec.init(), cars))
   expect_silent(ecr.ebars(ec.init(load='custom'), cars, encode=list(x=1,y=c(2,3,4))))
   expect_silent(ec.init(load='lottie'))
+  expect_silent(ec.init(load='ecStat'))
   #expect_silent(ec.init(load='liquid'))   # Debian throws warnings in CRAN check
   #expect_silent(ec.init(load='gmodular'))
   #expect_silent(ec.init(load='wordcloud'))

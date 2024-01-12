@@ -24,10 +24,39 @@ If grouping is on multiple columns, only the first one is used to determine sett
 
 \item{preset}{Boolean (default TRUE). Build preset attributes like dataset, series, xAxis, yAxis, etc.}
 
-\item{ctype}{Chart type of series. Default is 'scatter'. Set to NULL to disable series preset.}
+\item{ctype}{Chart type, default is 'scatter'.}
 
-\item{...}{List contains other attributes to pass to the widget. \cr
-Custom echarty widget attributes include: \cr
+\item{...}{Optional widget attributes. See Details. \cr}
+
+\item{series.param}{Additional attributes for preset series, default is NULL.\cr
+Can be used for non-timeline and timeline series (instead of \emph{tl.series}). A single list defines one series type only.\cr
+One could also define all series directly with \emph{series=list(list(...),list...)} instead.}
+
+\item{tl.series}{Deprecated, use \emph{timeline} and \emph{series.param} instead.\cr}
+
+\item{width, height}{Optional valid CSS unit (like \code{'100\%'},
+\code{'500px'}, \code{'auto'}) or a number, which will be coerced to a
+string and have \code{'px'} appended.}
+}
+\value{
+A widget to plot, or to save and expand with more features.
+}
+\description{
+Required to build a chart. In most cases this will be the only command necessary.
+}
+\details{
+Command \emph{ec.init} creates a widget with \link[htmlwidgets]{createWidget}, then adds some ECharts features to it.\cr
+Numerical indexes for series,visualMap,etc. are R-counted (1,2...)\cr
+
+\strong{Presets}: \cr
+When a data.frame is chained to \emph{ec.init}, a \href{https://echarts.apache.org/en/option.html#dataset}{dataset} is preset. \cr
+When the data.frame is grouped and \emph{ctype} is not null, more datasets with legend and series are also preset. \cr
+Plugin '3D' is required for 2D series 'scatterGL'. Use \emph{preset=FALSE} and set explicitly \emph{xAxis} and \emph{yAxis}. \cr
+Plugins 'leaflet' and 'world' preset \emph{zoom=6} and \emph{center} to the mean of all coordinates. \cr
+Users can delete or overwrite any presets as needed. \cr
+
+\strong{Widget attributes}: \cr
+Optional echarty widget attributes include: \cr
 \itemize{
 \item elementId - Id of the widget, default is NULL(auto-generated)
 \item load - name(s) of plugin(s) to load. A character vector or comma-delimited string. default NULL.
@@ -40,53 +69,15 @@ vector:\cr
 \verb{     }Third is evaluated with exposed \emph{chart} object after \emph{opts} set.
 \item renderer - 'canvas'(default) or 'svg'
 \item locale - 'EN'(default) or 'ZH'. Use predefined or custom \href{https://gist.github.com/helgasoft/0618c6537c45bfd9e86d3f9e1da497b8}{like so}.
-\item useDirtyRect - enable dirty rectangle rendering or not, FALSE by default, see \href{https://echarts.apache.org/en/api.html#echarts.init}{here}
-}}
-
-\item{series.param}{Additional parameters for preset series, or NULL(default).\cr
-One can also define the complete series with \emph{series= list(list(...),...)}.}
-
-\item{tl.series}{A list to build a timeline or NULL(default). The list defines options \href{https://echarts.apache.org/en/option.html#series}{series} and their attributes. \cr
-The only required attribute is \href{https://echarts.apache.org/en/option.html#series-line.encode}{encode}.\cr
-\emph{encode} defines which data columns names to use for the axes: \cr
-\itemize{
-\item set \emph{x} and \emph{y} for coordinateSystem \emph{cartesian2d}
-\item set \emph{lng} and \emph{lat} for coordinateSystem \emph{geo}
-\item set \emph{radius} and \emph{angle} for coordinateSystem \emph{polar}
-\item set \emph{value} and \emph{itemName} for \emph{pie} chart
-\item set \emph{value} and \emph{name} for \emph{map} chart
+\item useDirtyRect - enable dirty rectangle rendering or not, FALSE by default, see \href{https://echarts.apache.org/en/api.html#echarts.init}{here}\cr
 }
-
-Attribute \emph{coordinateSystem} is not set by default and depends on chart \emph{type}.\cr
-Custom attribute \emph{groupBy}, a \emph{df} column name, can create series groups inside each timeline step.\cr
-A grouped \emph{df} must be present, with group column providing the \href{https://echarts.apache.org/en/option.html#timeline.data}{timeline data}.
-Auto-generated \emph{timeline} and \emph{options} will be preset for the chart.\cr
-\emph{tl.series} cannot be used for hierarchical charts like graph,tree,treemap,sankey. Chart options/timeline have to be built directly, see \href{https://helgasoft.github.io/echarty/uc4.html}{example}.}
-
-\item{width, height}{A valid CSS unit (like \code{'100\%'},
-\code{'500px'}, \code{'auto'}) or a number, which will be coerced to a
-string and have \code{'px'} appended.}
-}
-\value{
-A widget to plot, or to save and expand with more features.
-}
-\description{
-Required to build a chart. In most cases this will be the only command necessary.
-}
-\details{
-Command \emph{ec.init} creates a widget with \link[htmlwidgets]{createWidget}, then adds some ECharts features to it.\cr
-When \emph{ec.init} is chained after a data.frame, a \href{https://echarts.apache.org/en/option.html#dataset}{dataset} is preset. \cr
-When data.frame is grouped and \emph{ctype} is not null, more datasets with legend and series are also preset. \cr
-Plugin '3D' presets will not work for 'scatterGL'. Instead, use \emph{preset=FALSE} and set explicitly \emph{xAxis,yAxis}. \cr
-Plugins 'leaflet' and 'world' preset zoom=6 and center to the mean of all coordinates. \cr
-Users can delete or overwrite any presets as needed. \cr
-Numerical indexes for series,visualMap,etc. are R-counted (1,2...)\cr
 
 \strong{Built-in plugins}: \cr
 \itemize{
 \item leaflet - Leaflet maps with customizable tiles, see \href{https://github.com/gnijuohz/echarts-leaflet#readme}{source}\cr
 \item world - world map with country boundaries, see \href{https://github.com/apache/echarts/tree/master/test/data/map/js}{source} \cr
 \item lottie - support for \href{https://lottiefiles.com}{lotties} \cr
+\item ecStat - statistical tools, see\href{https://github.com/ecomfe/echarts-stat}{echarts-stat}\cr
 \item custom - renderers for \link{ecr.band} and \link{ecr.ebars} \cr
 Plugins with one-time installation: \cr
 \item 3D - 3D charts and WebGL acceleration, see \href{https://github.com/ecomfe/echarts-gl}{source} and \href{https://echarts.apache.org/en/option-gl.html#series}{docs} \cr
@@ -100,6 +91,25 @@ or install your own third-party plugins.\cr
 Parameter \emph{df} should be of type \link[crosstalk]{SharedData}, see \href{https://helgasoft.github.io/echarty/gallery.html#crosstalk-2d}{more info}.\cr
 Optional parameter \emph{xtKey}: unique ID column name of data frame \emph{df}. Must be same as \emph{key} parameter used in \emph{SharedData$new()}. If missing, a new column \emph{XkeyX} will be appended to df.\cr
 Enabling \emph{crosstalk} will also generate an additional dataset called \emph{Xtalk} and bind the \strong{first series} to it.\cr
+
+\strong{Timeline}:\cr
+Defined by \emph{series.param} for the \href{https://echarts.apache.org/en/option.html#series}{options series} and a \emph{timeline} list for the \href{https://echarts.apache.org/en/option.html#timeline}{actual control}.
+A grouped \emph{df} is required, each group providing data for one option serie.
+Timeline \href{https://echarts.apache.org/en/option.html#timeline.data}{data} and \href{https://echarts.apache.org/en/option.html#options}{options} will be preset for the chart.\cr
+Another preset is \emph{encode(x=1,y=2,z=3)}, which are the first 3 columns of \emph{df}. Parameter \emph{z} is ignored in 2D. See Details below.\cr
+Optional attribute \emph{groupBy}, a \emph{df} column name, can create series groups inside each timeline option.\cr
+Timeline cannot be used for hierarchical charts like graph,tree,treemap,sankey. Chart options/timeline have to be built directly, see \href{https://helgasoft.github.io/echarty/uc4.html}{example}.
+
+\strong{\href{https://echarts.apache.org/en/option.html#series-line.encode}{Encode}} \cr
+A series attribute to define which columns to use for the axes, depending on chart type and coordinate system: \cr
+\itemize{
+\item set \emph{x} and \emph{y} for coordinateSystem \emph{cartesian2d}
+\item set \emph{lng} and \emph{lat} for coordinateSystem \emph{geo} and \emph{scatter} series
+\item set \emph{value} and \emph{name} for coordinateSystem \emph{geo} and \emph{map} series
+\item set \emph{radius} and \emph{angle} for coordinateSystem \emph{polar}
+\item set \emph{value} and \emph{itemName} for \emph{pie} chart
+Example: \code{encode(x='col3', y='col1')} binds xAxis to \emph{df} column 'col3'.
+}
 }
 \examples{
  # basic scatter chart from a data.frame, using presets
@@ -110,9 +120,14 @@ iris |> dplyr::group_by(Species) |>
 ec.init(        # init with presets
   tooltip= list(show= TRUE),
   series.param= list( 
-    symbolSize= ec.clmn(4, scale=7),
-    tooltip= list(formatter= ec.clmn('Petal.Width: \%@', 4))
+    symbolSize= ec.clmn('Petal.Width', scale=7),
+    tooltip= list(formatter= ec.clmn('Petal.Width: \%@', 'Petal.Width'))
   )
+)
+
+data.frame(n=1:5) |> dplyr::group_by(n) |> ec.init(
+  timeline= list(show=TRUE, autoPlay=TRUE),
+  series.param= list(type='gauge', max=5)
 )
 
 }

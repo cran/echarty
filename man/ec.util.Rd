@@ -44,7 +44,7 @@ tabset, table layout, support for GIS shapefiles through library 'sf'
 \verb{   }... - optional custom series attributes like \emph{itemStyle}\cr
 \verb{   }ppfill - optional fill color like '#F00', OR NULL for no-fill, for all Points and Polygons\cr
 \verb{   }nid - optional feature property for item name used in tooltips\cr
-\verb{   }optional geoJSON \emph{feature properties}: color, ppfill, lwidth, ldash, radius(for points)\cr
+\verb{   }optional geoJson \emph{feature properties}: color, ppfill, lwidth, ldash, radius(for points)\cr
 \strong{cmd = 'layout'} \cr
 \verb{   }multiple charts in table-like rows/columns format\cr
 \verb{   }... - List of charts\cr
@@ -54,8 +54,6 @@ tabset, table layout, support for GIS shapefiles through library 'sf'
 \verb{   }For greater number of charts \emph{ec.util(cmd='layout')} comes in handy\cr
 \strong{cmd = 'tabset'} \cr
 \verb{   }... - a list name/chart pairs like \emph{n1=chart1, n2=chart2}, each tab may contain a chart.\cr
-\verb{   }width -  optional width of tabs in pixels\cr
-\verb{   }height - optional height of tabs in pixels\cr
 \verb{   }tabStyle - tab style string, see default \emph{tabStyle} variable in the code\cr
 \verb{   }Returns A) \link[htmltools]{tagList} of tabs when in a pipe without '...' params, see example\cr
 \verb{   }Returns B) \link[htmltools]{browsable} when '...' params are provided by user\cr

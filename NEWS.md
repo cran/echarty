@@ -1,5 +1,25 @@
 # history of package _echarty_
 
+## v.1.6.3
+
+- added coder.R demo
+- correct gridIndex numbering for xAxis/yAxis
+- deprecate _tl.series_, replace with _timeline_ and _series.param_
+
+## v.1.6.2.01
+
+- make crosstalk work with improved _ec.clmn_
+- add _ecStat_ to built-in plugins
+- removed _dataTool.min.js_ from dependencies (yaml)
+- dataset,geo,polar,etc. indexes in series now with R-counting
+- built with R v.4.3.2
+- add default _coordinateSystem_ for 3D charts
+- fix _datasetIndex_ for timeline 3D series
+- add _encode_ default, improve _ec.init_ docs
+- _tl.series_ type 'map': add support 'dimension' for visualMap, fix 'legend' & 'title' bugs
+- removed width/height from 'tabset', handled by _ec.init_
+- _ecr.band_ replaced default type from 'stack' to 'polygon'
+
 ## v.1.6.2  on CRAN
 
 - allow axis rename (fix)
