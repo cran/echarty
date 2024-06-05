@@ -279,6 +279,7 @@ test_that("ec.data boxlpot", {
   # without grouping -------------------
   p <- mtcars |> relocate(cyl,mpg) |> ec.data(format='boxplot', outliers=TRUE)
   expect_equal(p$series[[1]]$type, 'boxplot')
+  expect_equal(p$series[[1]]$datasetIndex, 2)
   expect_equal(p$dataset[[1]]$source[[1]][[3]], 22.8)
   expect_equal(p$xAxis[[1]]$name, 'mpg')
   #expect_equal(p$series[[2]]$z, 4)
@@ -365,8 +366,24 @@ test_that("ec.data treeTK", {
   expect_equal(p$x$opts$series[[1]]$data[[1]]$value, 2201)
 })
 
+test_that("ec.data 'names' + nasep", {
+  df <- data.frame(name= c('A','B','C'), value= c(1,2,3),
+        itemStyle_color= c('chartreuse','lightblue','pink'),
+        itemStyle_decal_symbol= c('rect','diamond','none'),                   
+        emphasis_itemStyle_color= c('green','blue','red')
+  )
+  p <- ec.init(series.param= list(
+    type='pie', data= ec.data(df, 'names', nasep='_')))
+  expect_equal(p$x$opts$series[[1]]$data[[1]]$emphasis$itemStyle$color, 'green')
+  expect_equal(p$x$opts$series[[1]]$data[[2]]$itemStyle$decal$symbol, 'diamond')
+  expect_equal(p$x$opts$series[[1]]$data[[3]]$itemStyle$color, 'pink')
+})
+
 test_that("ec.inspect and ec.fromJson", {
-  p <- mtcars |> group_by(gear) |> ec.init() |> ec.inspect('data')
+  p <- mtcars |> group_by(gear) |> 
+    # param to increase coverage, no sense otherwise
+    ec.init(series.param= list(dimensions= c('m','c','d'), encode= list(y='qsec'))) |> 
+    ec.inspect('data')
   expect_match(p[1], "rows= 33", fixed=TRUE)
   expect_match(p[2], "filter", fixed=TRUE)
 
@@ -386,10 +403,10 @@ test_that("ec.inspect and ec.fromJson", {
     legend= list(show= TRUE),
     xAxis= list(type='category', boundaryGap=FALSE),
     series= append(
-      list(list(type='line', color='red', datasetIndex=0, name='line1')),
+      list(list(type='line', color='red', datasetIndex=1, name='line1')),
       ecr.band(df, 'lwr', 'upr', type='stack', name='stak')
     ),
-    tooltip= list(trigger='axis', #console.log(x)"))
+    tooltip= list(trigger='axis',
                 formatter=htmlwidgets::JS("(x) => 
     x.length==1 ? 'line '+x[0].value[1] :
     x.length==2 ? 'high <b>'+x[1].value[2]+'</b><br>low <b>'+x[0].value[1] :
@@ -408,6 +425,8 @@ test_that("ec.inspect and ec.fromJson", {
   
   tmp <- p |> ec.inspect()  # opts only
   expect_true(regexpr('^\\{\\n  "legend": \\{', as.character(tmp))==1)
+  tmp <- p |> ec.inspect(pretty=FALSE)
+  expect_true(startsWith(tmp,'{"legend')==1)
   
   v <- ec.fromJson(tmp)
   expect_equal(v$x$opts$xAxis$type, 'category')

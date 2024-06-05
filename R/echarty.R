@@ -14,7 +14,7 @@ NULL
 the <- new.env(parent = emptyenv())
 the$.ecv.colnames <- NULL
 noAxis <- c('radar','parallel','themeRiver','map','gauge','pie','funnel','polar',  
-        'sunburst','tree','treemap','sankey','lines')
+        'sunburst','tree','treemap','sankey','lines', 'liquidFill','wordCloud')
 noCoord <- c('polar','radar','singleAxis','parallelAxis','calendar')
 # using list(show=TRUE) or list(list()) is to create empty object{} in JS
 
@@ -22,7 +22,7 @@ noCoord <- c('polar','radar','singleAxis','parallelAxis','calendar')
 #'
 #' Required to build a chart. In most cases this will be the only command necessary.
 #'
-#' @param df A data.frame to be preset as \href{https://echarts.apache.org/en/option.html#dataset}{dataset}, default NULL \cr
+#' @param df Optional data.frame to be preset as \href{https://echarts.apache.org/en/option.html#dataset}{dataset}, default NULL \cr
 #'   By default the first column is for X values, second column is for Y, and third is for Z when in 3D.\cr
 #'   Best practice is to have the grouping column placed last. Grouping column cannot be used as axis.\cr
 #'   Timeline requires a _grouped data.frame_ to build its \href{https://echarts.apache.org/en/option.html#options}{options}.\cr
@@ -30,8 +30,8 @@ noCoord <- c('polar','radar','singleAxis','parallelAxis','calendar')
 #' @param ctype Chart type, default is 'scatter'.
 #' @param preset Boolean (default TRUE). Build preset attributes like dataset, series, xAxis, yAxis, etc.
 #' @param series.param  Additional attributes for preset series, default is NULL.\cr
-#'  Can be used for non-timeline and timeline series (instead of _tl.series_). A single list defines one series type only.\cr
-#'  One could also define all series directly with _series=list(list(...),list...)_ instead.
+#'  Defines a single series type. Can be used for both non-timeline and timeline series. \cr
+#'  Multiple series types need to be defined directly with _series=list(list(...),list...)_ or added with [ec.upd].
 #' @param tl.series Deprecated, use _timeline_ and _series.param_ instead.\cr
 #' @param ...  Optional widget attributes. See Details. \cr
 #' @param width,height Optional valid CSS unit (like \code{'100\%'},
@@ -42,10 +42,10 @@ noCoord <- c('polar','radar','singleAxis','parallelAxis','calendar')
 #'  Numerical indexes for series,visualMap,etc. are R-counted (1,2...)\cr
 #' 
 #'  **Presets**: \cr 
-#'  When a data.frame is chained to _ec.init_, a \href{https://echarts.apache.org/en/option.html#dataset}{dataset} is preset. \cr
+#'  When data.frame df is chained to _ec.init_, a \href{https://echarts.apache.org/en/option.html#dataset}{dataset} is preset. \cr
 #'  When the data.frame is grouped and _ctype_ is not null, more datasets with legend and series are also preset. \cr
 #'  Plugin '3D' is required for 2D series 'scatterGL'. Use _preset=FALSE_ and set explicitly _xAxis_ and _yAxis_. \cr
-#'  Plugins 'leaflet' and 'world' preset _zoom=6_ and _center_ to the mean of all coordinates. \cr
+#'  Plugins 'leaflet' and 'world' preset _center_ to the mean of all coordinates from df. \cr
 #'  Users can delete or overwrite any presets as needed. \cr
 #'  
 #'  **Widget attributes**: \cr
@@ -120,6 +120,7 @@ noCoord <- c('polar','radar','singleAxis','parallelAxis','calendar')
 #' )
 #' 
 #' @importFrom htmlwidgets createWidget sizingPolicy getDependency JS shinyWidgetOutput shinyRenderWidget
+#' @importFrom utils read.csv
 #' @import dplyr
 #' 
 #' @export
@@ -156,10 +157,12 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   useDirtyRect <- if (is.null(opt1$useDirtyRect)) FALSE else opt1$useDirtyRect
   xtKey <- if (is.null(opt1$xtKey)) 'XkeyX' else opt1$xtKey
   if (xtKey=='XkeyX') df$XkeyX <- dfKey   # add new column for Xtalk filtering, if needed
+  # allow debug feedback thru cat() in JS and R code:
+  dbg <- if (is.null(opt1$dbg)) FALSE else opt1$dbg   
   # remove the above attributes since they are not valid ECharts options
   opt1$ask <- opt1$js <- opt1$renderer <- opt1$locale <- NULL
-  opt1$useDirtyRect <- opt1$elementId <- opt1$xtKey <- NULL
-  axis2d <- c('pictorialBar','candlestick','boxplot','custom','scatterGL')
+  opt1$useDirtyRect <- opt1$elementId <- opt1$xtKey <- opt1$dbg <- NULL
+  axis2d <- c('pictorialBar','candlestick','boxplot','scatterGL') #'custom',
   
   # forward widget options using x
   x <- list(
@@ -168,7 +171,7 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
     renderer = renderer,
     locale = locale,
     useDirtyRect = useDirtyRect,
-    jcode = js,
+    jcode = js, dbg = dbg,
     opts = opt1,
     settings = list(
       crosstalk_key = key,
@@ -251,11 +254,15 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
       if (!is.null(opt1$geo3D)) ser$coordinateSystem <- 'geo3D'
       if (!is.null(opt1$globe)) ser$coordinateSystem <- 'globe'
     }
-    if (!is.null(opt1$geo) && ser$type %in% c('scatter','scatterGL','lines'))
-      ser$coordinateSystem <- 'geo'
+    if (ser$type %in% c('scatter','scatterGL','lines')) {
+      if (!is.null(opt1$geo)) ser$coordinateSystem <- 'geo'
+      if ('world' %in% opt1$load) ser$coordinateSystem <- 'geo'
+      if ('leaflet' %in% opt1$load) ser$coordinateSystem <- 'leaflet'
+    }
+    #if (!is.null(opt1$leaflet)) ser$coordinateSystem <- 'leaflet'
+      
     if (!is.null(opt1$calendar) && ser$type %in% c('heatmap','scatter','effectScatter'))
       ser$coordinateSystem <- 'calendar'
-    if (!is.null(opt1$leaflet)) ser$coordinateSystem <- 'leaflet'
     #if (!is.null(opt1$radar)) series?$type <- 'radar'
     if (ser$type == 'parallel') {
       if (is.null(opt1$parallelAxis) && !is.null(df))
@@ -281,32 +288,25 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
     return(list(x=xtem, y=ytem, z='z', c=ser$coordinateSystem))
   }
   doVMap <- function(wid) {
-    # visualMap assist
+    # visualMap assist: auto add min/max/calculable   (categories==piecewise)
     vm <- wid$opts$visualMap
     out <- NULL
     if (!is.null(df) && !is.null(vm) &&
-        is.null(vm$min) && is.null(vm$max) &&
+        is.null(vm$min) && is.null(vm$max) && is.null(vm$categories) &&
         (is.null(vm$type) || (vm$type == 'continuous')) ) {
       
-      if (any(names(df) == 'value') && (
-            (!is.null(tl.series) && tl.series$type=='map') ||
-            (!is.null(series.param) && series.param$type=='map'))
-         )
-          # get min/max from df, despite conversion df to series.data 
-          out <- list(  # for tl.series 'map'
-            min= min(na.omit(df$value)),  
-            max= max(na.omit(df$value)),
-            calculable= TRUE
-          )
-      else {
-        xx <- length(colnames(df))   # last column by default in ECharts
+        xx <- length(colnames(df))   # last numeric column by default
+        for(xx in xx:1) if (is.numeric(df[,xx])) break
+        if (any(names(df) == 'value') && (
+          (!is.null(tl.series) && tl.series$type=='map') ||
+          (!is.null(series.param) && series.param$type=='map'))
+        ) xx <- 'value'
         if (!is.null(vm$dimension)) xx <- vm$dimension
         out <- list(
           min= min(na.omit(df[,xx])),
           max= max(na.omit(df[,xx])),
           calculable= TRUE
         )
-      } 
     }
     out
   }
@@ -473,6 +473,7 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
     ),
     dependencies = deps
   )
+  #if (dbg) cat('\naxis2d=',axis2d)
   
   tmp <- getOption('echarty.font')
   if (!is.null(tmp))
@@ -484,8 +485,7 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   
   # ------------- plugins loading -----------------------------
   opt1 <- wt$x$opts
-  load <- opt1$load;
-  wt$x$opts$load <- NULL
+  load <- opt1$load;  wt$x$opts$load <- NULL
   if (length(load)==1 && grepl(',', load, fixed=TRUE))
       load <- unlist(strsplit(load, ','))
       
@@ -493,11 +493,6 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   dep <- NULL
   
   if ('world' %in% load) {
-    dep <- htmltools::htmlDependency(
-      name = 'world', version = '1.0.0', 
-      src = c(file = path), script= 'world.js')
-    wt$dependencies <- append(wt$dependencies, list(dep))
-    
     if (preset) {
       wt$x$opts$xAxis <- wt$x$opts$yAxis <- NULL
       if (!is.null(df)) {   # coordinateSystem='geo' needed for all series
@@ -506,16 +501,22 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
       # WARN: duplicate maps if series have map='world' too
       if (!'geo' %in% names(opt1))
         wt$x$opts$geo = list(map='world', roam=TRUE)
-      else
-        wt$x$opts$geo = .merlis(wt$x$opts$geo, list(map='world'))
-      if (is.null(wt$x$opts$geo$roam))
-        wt$x$opts$geo$roam <- TRUE
+      # else {
+      #   wt$x$opts$geo = .merlis(wt$x$opts$geo, list(map='world'))
+      #   if (is.null(wt$x$opts$geo$roam)) wt$x$opts$geo$roam <- TRUE
+      # }
       # if (!is.null(df))  # cancelled: don't know if df first 2 cols are 'lng','lat'
       #   wt$x$opts$geo$center= c(mean(unlist(df[,1])), mean(unlist(df[,2])))
     }
+    dep <- htmltools::htmlDependency(
+      name = 'world', version = '1.0.0', 
+      src = c(file = path), script= 'world.js')
+    wt$dependencies <- append(wt$dependencies, list(dep))
   }
-
   if ('leaflet' %in% load) {
+      # coveralls pops error, win/linux ok :
+      #stopifnot("ec.init: library 'leaflet' not installed"= file.exists(file.path(.libPaths(), 'leaflet')[[1]]))
+    if (!file.exists(file.path(.libPaths(), 'leaflet')[[1]])) warning("ec.init: library 'leaflet' not installed")
     if (preset) {
       # customizations for leaflet
       wt$x$opts$xAxis <- wt$x$opts$yAxis <- NULL
@@ -541,11 +542,14 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
       
     }
     
+    #wt$dependencies <- append(wt$dependencies, htmlwidgets::getDependency('leaflet'))  # working with leaflet <=v.2.1.0
+    wt$dependencies <- append(wt$dependencies, list( htmltools::htmlDependency(
+      name= "leaflet", version= "1.3.1", package= "leaflet", src= "htmlwidgets/lib/leaflet",
+      script= "leaflet.js", stylesheet= "leaflet.css") )
+    )
     dep <- htmltools::htmlDependency(
-      name = 'echarts-leaflet', 
-      version = '1.0.0', src = c(file = path), 
-      script='echarts-leaflet.js')
-    wt$dependencies <- append(wt$dependencies, htmlwidgets::getDependency('leaflet'))
+      name= 'echarts-leaflet', version= '1.0.0', src= c(file= path), 
+      script= 'echarts-leaflet.js')
     wt$dependencies <- append(wt$dependencies, list(dep))
   }
   if ('custom' %in% load) {
@@ -568,9 +572,10 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   }
   
   # Plugins implemented as dynamic load on-demand
-  cdn <- 'https://cdn.jsdelivr.net/npm/'
-  if ('3D' %in% load) {
-    if (preset) {       # replace 2D presets with 3D
+  if (any(load %in% c('3D','liquid','gmodular','wordcloud'))) {
+    plf <- read.csv(system.file('plugins.csv', package='echarty'), header=TRUE, stringsAsFactors=FALSE)
+    if ('3D' %in% load) {
+      if (preset) {       # replace 2D presets with 3D
       isScatGL <- 'scatterGL' %in% unlist(lapply(opt1$series, \(k){k$type}))  # scatterGL is 2D
       if (!isScatGL && is.null(opt1$globe) && is.null(opt1$geo3D) ) {  
         wt$x$opts$xAxis <- wt$x$opts$yAxis <- NULL
@@ -589,21 +594,12 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
           \(s) { s$type= if (s$type=='scatter') 'scatter3D' else s$type; s })
       }
     }
-    wt <- ec.plugjs(wt, 
-      paste0(cdn,'echarts-gl@2.0.9/dist/echarts-gl.min.js'), ask)
-  }
-  if ('liquid' %in% load) 
-    wt <- ec.plugjs(wt, 
-      paste0(cdn,'echarts-liquidfill@latest/dist/echarts-liquidfill.min.js'), ask)
-  
-  if ('gmodular' %in% load) 
-    wt <- ec.plugjs(wt, 
-      paste0(cdn,'echarts-graph-modularity@latest/dist/echarts-graph-modularity.min.js'), ask)
-  
-  if ('wordcloud' %in% load) 
-    wt <- ec.plugjs(wt, 
-      paste0(cdn,'echarts-wordcloud@2.0.0/dist/echarts-wordcloud.min.js'), ask)
-  
+      wt <- ec.plugjs(wt, plf[plf$name=='3D',]$url, ask)
+    }
+    if ('liquid' %in% load) wt <- ec.plugjs(wt, plf[plf$name=='liquid',]$url, ask)
+    if ('gmodular' %in% load) wt <- ec.plugjs(wt, plf[plf$name=='gmodular',]$url, ask)
+    if ('wordcloud' %in% load) wt <- ec.plugjs(wt, plf[plf$name=='wordcloud',]$url, ask)
+  }  
   # load unknown plugins
   unk <- load[! load %in% c('leaflet','custom','world','lottie','ecStat',
                             '3D','liquid','gmodular','wordcloud')]
@@ -625,17 +621,19 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   }
   
   
-  # ------------- timeline  -----------------
+  # ------------- timeline is last -----------------
   if (is.null(tl.series) && is.null(opt1$timeline)) return(wt)
   if (!preset) return(wt)
-  # timeline is evaluated last
+  if (!is.null(opt1$options) && !is.null(opt1$timeline))
+    return(wt)    # both set manually
+
   if (is.null(tl.series) && 
       !is.null(opt1$timeline) && 
       !is.null(series.param))
     tl.series <- series.param
   
   if (is.null(df) || !is.grouped_df(df))
-      stop('ec.init: tl.series requires a grouped data.frame df')
+    stop('ec.init: timeline requires a grouped data.frame df')
 
   if (is.null(tl.series$encode))
     tl.series$encode <- list(x=1, y=2, z=3)  # set default for non-map series
@@ -647,19 +645,25 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   tmp <- xyNamesCS(tl.series)
   xtem <- tmp$x; ytem <- tmp$y
   if (!is.null(tmp$c)) tl.series$coordinateSystem <- tmp$c
+  #if (dbg) cat('\ntl=',tmp$x,' ',tmp$y,' ',tmp$c)
   
   if (any(c('geo','leaflet') %in% tl.series$coordinateSystem)) {
-      xtem <- 'lng'; ytem <- 'lat'
-      if (!is.null(unlist(tl.series$encode[xtem])) &&
-          !is.null(unlist(tl.series$encode[ytem])) ) {
-        center <- c(mean(unlist(df[,tl.series$encode$lng])),
-                    mean(unlist(df[,tl.series$encode$lat])))
+      klo <- 'lng'; kla <- 'lat'
+      if (!is.null(tl.series$encode)) {
+        klo <- unlist(tl.series$encode[klo]);
+        kla <- unlist(tl.series$encode[kla]);
+        if (is.numeric(klo)) klo <- colnames(df)[[klo]] 
+        if (is.numeric(kla)) kla <- colnames(df)[[kla]] 
+      }
+      if (all(c(klo,kla) %in% colnames(df))) {
+        center <- c(mean(unlist(df[,klo])),
+                    mean(unlist(df[,kla])))
         if (tl.series$coordinateSystem=='geo')
           wt$x$opts$geo$center <- center
         if (tl.series$coordinateSystem=='leaflet') 
           wt$x$opts$leaflet$center <- center
       }
-  } 
+  }
   
   if (tl.series$type == 'map') {
     xtem <- 'name'; ytem <- 'value'
@@ -706,7 +710,6 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
   
   #wt$x$opts$xAxis <- list(type='category')  # geo,leaf do not like
   wt$x$opts$series <- NULL   # otherwise legend + scatter series may stay behind
-  # wt$x$opts$legend <- NULL
   wt$x$opts$options <- .merlis(optl, wt$x$opts$options)
   
   if (!is.null(tl.series$groupBy)) {
@@ -759,25 +762,28 @@ ec.init <- function( df= NULL, preset= TRUE, ctype= 'scatter', ...,
 
 #' Update option lists
 #' 
-#' And improve readability by chaining commands after ec.init
+#' Chain commands after ec.init to add or update chart items
 #' 
 #' @param wt An echarty widget
-#' @param ... R commands to update chart option lists
+#' @param ... R commands to add/update chart option lists
 #'
-#' @details ec.upd makes changes to chart elements already set by ec.init.\cr
-#' It should be always piped after ec.init.\cr
-#' All numerical indexes for series,visualMap,etc. are JS-counted (start at 0)\cr
-#' Replaces syntax\cr
-#'   \verb{   }p <- ec.init(...)\cr
-#'   \verb{   }p$x$opts$series <- ...\cr
-#' with\cr
-#'   \verb{   }ec.init(...) |> \verb{   } # set or preset chart params\cr
-#'   \verb{   }ec.upd(\{series <- ...\}) # update params thru R commands
+#' @details \emph{ec.upd} makes changes to a chart already set by [ec.init].\cr
+#' It should be always piped(chained) after [ec.init].\cr
+#' All numerical indexes for series,visualMap,etc. are JS-counted and start at 0.\cr
 #' @examples
-#' Orange |> dplyr::group_by(Tree) |> 
-#' ec.init(series.param= list(universalTransition= list(enabled=TRUE))) |>
-#' ec.upd({ 
-#'  series <- lapply(series, function(ss) { ss$groupId <- ss$name; ss })
+#' library(dplyr)
+#' df <- data.frame(x= 1:30, y= runif(30, 5, 10), cat= sample(LETTERS[1:3],size=30,replace=TRUE)) |>
+#'   		mutate(lwr= y-runif(30, 1, 3), upr= y+runif(30, 2, 4))
+#' band.df <- df  |> group_by(cat) |> group_split()
+#' 
+#' df |> group_by(cat) |> 
+#' ec.init(load='custom', ctype='line', 
+#'         xAxis=list(data=c(0,unique(df$x)), boundaryGap=FALSE) ) |> 
+#' ec.upd({
+#'   for(ii in 1:length(band.df))   # add bands to their respective groups
+#'     series <- append(series,   
+#'       ecr.band(band.df[[ii]], 'lwr', 'upr', type='stack', smooth=FALSE,
+#'          name= unique(band.df[[ii]]$cat), areaStyle= list(color=c('blue','green','yellow')[ii])) )
 #' })
 #' @export
 ec.upd <- function(wt, ...) {
@@ -805,37 +811,32 @@ ec.upd <- function(wt, ...) {
 #'
 #' @details
 #' \itemize{
-#'  \item type='polygon': coordinates of the two boundaries are chained into one polygon. Tooltips do not show upper band values.\cr
-#'      _xAxis type_ could be 'category' or 'value'.\cr
-#'      Set fill color with attribute _color_.\cr
-#'  \item type='stack': two _stacked_ lines are drawn, the lower with customizable areaStyle.\cr
-#'      _xAxis type_ should be 'category'! Tooltips could include upper band values.\cr
-#'      Set fill color with attribute _areaStyle$color_.\cr
+#' \item type='polygon': coordinates of the two boundaries are chained into one polygon.\cr
+#' \verb{     }_xAxis type_ could be 'category' or 'value'.\cr
+#' \verb{     }Set fill color with attribute _color_.
+#' \item type='stack': two _stacked_ lines are drawn, the lower with customizable areaStyle.\cr
+#' \verb{     }_xAxis type_ should be 'category' ! \cr
+#' \verb{     }Set fill color with attribute _areaStyle$color_.\cr
+#' \verb{     }Optional tooltip formatter available in _band\[\[1\]\]$tipFmt_.
 #' }
 #' Optional parameter _name_, if given, will show up in legend. Legend merges all series with same name into one item.
 #' 
 #' @examples 
-#' df <- airquality |> dplyr::mutate(
-#'     lwr= round(Temp-Wind*2),
-#'     upr= round(Temp+Wind*2),
-#'       x= paste0(Month,'-',Day) ) |>
-#'   dplyr::relocate(x, Temp)
-#' bands <- ecr.band(df, 'lwr', 'upr', type='stack',
-#'                   name= 'stak', areaStyle= list(opacity=0.4))
-#' df |> ec.init( load= 'custom',
-#'    legend= list(show= TRUE),
-#'    dataZoom= list(type= 'slider'),
-#'    toolbox= list(feature= list(dataZoom= list(show= TRUE))),
-#'    xAxis= list(type= 'category', boundaryGap= FALSE),
-#'    series= list(
-#'      list(type='line', color='blue', name='line'),
-#'      bands[[1]], bands[[2]]
-#'    ),
-#'    tooltip= list( trigger= 'axis',
-#'      formatter= ec.clmn(
-#'         'high <b>%@</b><br>line <b>%@</b><br>low <b>%@</b>',
-#'                   3.3, 1.2, 2.2)
-#'    )  # 3.3= upper_serie_index +.+ index_of_column_inside
+#' set.seed(222)
+#' df <- data.frame( x = 1:10, y = round(runif(10, 5, 10),2)) |>
+#'   dplyr::mutate(lwr= round(y-runif(10, 1, 3),2), upr= round(y+runif(10, 2, 4),2) )
+#' banda <- ecr.band(df, 'lwr', 'upr', type='stack', name='stak', areaStyle= list(color='green'))
+#' #banda <- ecr.band(df, 'lwr', 'upr', type='polygon', name='poly1')
+#' 
+#' df |> ec.init( load='custom', # polygon only
+#'   legend= list(show= TRUE),
+#'   xAxis= list(type='category', boundaryGap=FALSE), # stack
+#'   #xAxis= list(scale=T, min='dataMin'),            # polygon 
+#'   series= append(
+#'     list(list(type='line', color='blue', name='line1')),
+#'     banda
+#'   ),
+#'   tooltip= list(trigger='axis', formatter= banda[[1]]$tipFmt)
 #' )
 #' 
 #' @importFrom stats na.omit
@@ -851,9 +852,15 @@ ecr.band <- function(df=NULL, lower=NULL, upper=NULL, type='polygon', ...) {
   df <- na.omit(df)
   
   if (type=='stack') {
+    tipFmt <- "(ss) => { lo=''; hi=''; lin='';
+ss.map(o => { nn = o.dimensionNames[1]; vv= o.value[1];
+if (nn==='.s.lo') lo= vv; 
+else if (nn==='.s.hi') hi= vv;
+else lin= '<br>line <b>'+vv+'</b>'; });
+str='high <b>'+(lo+hi)+'</b>'+lin+'<br>low <b>'+lo+'</b>'; return str;}"  # stack only
     colr <- paste("new echarts.graphic.LinearGradient(0, 0, 0, 1, [", 
-                  "{offset: 0, color: 'rgba(255, 0, 135)'},", 
-                  "{offset: 1, color: 'rgba(135, 0, 157)'}]);")
+              "{offset: 0, color: 'rgba(255, 0, 135)'},", 
+              "{offset: 1, color: 'rgba(135, 0, 157)'}]);")
     defStyle <- list(opacity = 0.8, color = htmlwidgets::JS(colr))
     
     slow <- list(type='line', ...)
@@ -867,10 +874,13 @@ ecr.band <- function(df=NULL, lower=NULL, upper=NULL, type='polygon', ...) {
     if (is.null(supr$areaStyle))  supr$areaStyle <- defStyle
     # save upper data for tooltip, 'hi' values are just differences
     tmp <- data.frame(x = df[fstc][[1]], lo=df[lower][[1]], 
-                      hi = df[upper][[1]] - df[lower][[1]], 
+                      hi = df[upper][[1]] - df[lower][[1]], # for stacked line
                       ttip = df[upper][[1]] )
     slow$data <- ec.data(tmp[,c('x','lo')])
     supr$data <- ec.data(tmp[,c('x','hi','ttip')])
+    supr$dimensions <- c('x','.s.hi','.s.tip')
+    slow$tipFmt <- ec.clmn(tipFmt)    # simple optional tooltip 
+    slow$dimensions <- c('x','.s.lo')
     serios <- list(slow, supr)
   }
   else {   # polygon
@@ -885,6 +895,7 @@ ecr.band <- function(df=NULL, lower=NULL, upper=NULL, type='polygon', ...) {
     if (is.null(serios$itemStyle)) serios$itemStyle <- list(borderWidth = 0.5)
     if (is.null(serios$boundaryGap)) serios$boundaryGap <- FALSE
     serios <- list(serios)  # keep consistent with stack type
+    serios$tipFmt <- NULL
   }
   serios
 }
@@ -1191,9 +1202,9 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
               startsWith(source, 'http') || startsWith(source, 'file://'))
   fname <- basename(source)
   fname <- unlist(strsplit(fname, '?', fixed=TRUE))[1]  # when 'X.js?key=Y'
-  # if (!endsWith(fname, '.js'))
-  #   stop('ec.plugjs expecting .js suffix', call. = FALSE)
+  # if (!endsWith(fname, '.js')) stop('ec.plugjs expecting .js suffix', call. = FALSE)
   path <- system.file('js', package = 'echarty')
+  
   ffull <- paste0(path,'/',fname)
   if (!file.exists(ffull)) {
     if (ask) {
@@ -1205,19 +1216,20 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
       if (is.na(ans)) ans <- FALSE  # was cancelled
     } else
       ans <- TRUE
-    if (ans) {
-      try(withCallingHandlers(
-        download.file(source, ffull, quiet=TRUE), # method = "libcurl"),
-        error = function(w) { ans <- FALSE },
-        warning = function(w) { ans <- FALSE }
-        #cat('ec.plugjs Error:', sub(".+HTTP status was ", "", w, source))
-      ))  #,silent=TRUE)
+    if (ans && !exists('ec.webR')) {  # WebR dislikes download.file
+      #try(withCallingHandlers(    # function(w) { ans <- FALSE }
+      errw <- function(w) { ans <- FALSE
+        cat('ec.plugjs:', sub(".+HTTP status was ", "", w, source)) }
+      tryCatch({
+        download.file(source, ffull, quiet=TRUE) }, # method = "libcurl"),
+        error = errw, warning = errw
+      )
     } 
     if (!ans) return(wt)    # error
   }
   dep <- htmltools::htmlDependency(
-    name = fname, version = '1.0.0', src = c(file = path),
-    script = fname
+    name= fname, version= '1.1.1', src= c(file = path),
+    script= fname
   )
   wt$dependencies <- append(wt$dependencies, list(dep))
   return(wt)
@@ -1307,7 +1319,7 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
 #'
 #' Original work Copyright 2018 John Coene
 #' 
-#' Modified work Copyright 2021 Larry Helgason
+#' Modified work Copyright 2021-2024 Larry Helgason
 #' 
 #' Licensed under the Apache License, Version 2.0 (the "License");
 #' you may not use this file except in compliance with the License.

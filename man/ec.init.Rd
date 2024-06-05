@@ -16,7 +16,7 @@ ec.init(
 )
 }
 \arguments{
-\item{df}{A data.frame to be preset as \href{https://echarts.apache.org/en/option.html#dataset}{dataset}, default NULL \cr
+\item{df}{Optional data.frame to be preset as \href{https://echarts.apache.org/en/option.html#dataset}{dataset}, default NULL \cr
 By default the first column is for X values, second column is for Y, and third is for Z when in 3D.\cr
 Best practice is to have the grouping column placed last. Grouping column cannot be used as axis.\cr
 Timeline requires a \emph{grouped data.frame} to build its \href{https://echarts.apache.org/en/option.html#options}{options}.\cr
@@ -29,8 +29,8 @@ If grouping is on multiple columns, only the first one is used to determine sett
 \item{...}{Optional widget attributes. See Details. \cr}
 
 \item{series.param}{Additional attributes for preset series, default is NULL.\cr
-Can be used for non-timeline and timeline series (instead of \emph{tl.series}). A single list defines one series type only.\cr
-One could also define all series directly with \emph{series=list(list(...),list...)} instead.}
+Defines a single series type. Can be used for both non-timeline and timeline series. \cr
+Multiple series types need to be defined directly with \emph{series=list(list(...),list...)} or added with \link{ec.upd}.}
 
 \item{tl.series}{Deprecated, use \emph{timeline} and \emph{series.param} instead.\cr}
 
@@ -49,10 +49,10 @@ Command \emph{ec.init} creates a widget with \link[htmlwidgets]{createWidget}, t
 Numerical indexes for series,visualMap,etc. are R-counted (1,2...)\cr
 
 \strong{Presets}: \cr
-When a data.frame is chained to \emph{ec.init}, a \href{https://echarts.apache.org/en/option.html#dataset}{dataset} is preset. \cr
+When data.frame df is chained to \emph{ec.init}, a \href{https://echarts.apache.org/en/option.html#dataset}{dataset} is preset. \cr
 When the data.frame is grouped and \emph{ctype} is not null, more datasets with legend and series are also preset. \cr
 Plugin '3D' is required for 2D series 'scatterGL'. Use \emph{preset=FALSE} and set explicitly \emph{xAxis} and \emph{yAxis}. \cr
-Plugins 'leaflet' and 'world' preset \emph{zoom=6} and \emph{center} to the mean of all coordinates. \cr
+Plugins 'leaflet' and 'world' preset \emph{center} to the mean of all coordinates from df. \cr
 Users can delete or overwrite any presets as needed. \cr
 
 \strong{Widget attributes}: \cr
