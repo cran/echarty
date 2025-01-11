@@ -1,20 +1,15 @@
-# ----------- Examples --------------
-
 #' Code Examples
 #' 
-#' Learn by example - copy/paste code from Examples below.\cr
+#' Learn by example - copy/paste code from examples below.
 #' This code collection is to demonstrate various concepts of 
 #'   data preparation, conversion, grouping, 
 #'   parameter setting, visual fine-tuning, 
 #'   custom rendering, plugins attachment, 
 #'   Shiny plots & interactions through Shiny proxy.\cr
 #' 
-#' @return No return value, used only for help
-#' 
-#' @seealso \href{https://helgasoft.github.io/echarty/}{website} has many more examples
-#' 
-#' @examples 
-#' \donttest{
+#' see also gallery https://helgasoft.github.io/echarty/articles/gallery.html for more examples
+
+#' \donttest {      # for CRAN
 #' library(dplyr); library(echarty)
 #' 
 #' #------ Basic scatter chart, instant display
@@ -50,7 +45,7 @@
 #'     z = round(rnorm(cnt, 11, 2)),
 #'     colr = rainbow(cnt) 
 #' ) |> 
-#' ec.init( preset= FALSE,
+#' ec.init(
 #'    polar= list(radius= '90%'),
 #'    radiusAxis= list(max= 'dataMax'), 
 #'    angleAxis= list(type= "category"),
@@ -76,7 +71,7 @@
 #' ec.init(load= 'leaflet',
 #'    tooltip= list(formatter= ec.clmn('magnitude %@', 'mag')),
 #'    legend= list(show=TRUE),
-#' 	series.param= list(name= 'quakes', symbolSize= ec.clmn(6, scale=2))  # 6th column is size
+#' 	series.param= list(name= 'quakes', symbolSize= ec.clmn('size', scale=2))
 #' )
 #'
 #' #------ Plugin 'world' with visualMap
@@ -103,17 +98,15 @@
 #'                     color = c("#387e78","#eeb422","#d9534f",'magenta'))
 #'   tmp <- head(flights,10) |> inner_join(tmp)    # add color by airport
 #'   ec.init(load= 'world',
-#'     geo= list(center= c(mean(flights$start_lon), mean(flights$start_lat)), 
-#'   	   		 zoom= 7, map='world' ),
-#'     series= list(list(
-#'       type= 'lines', coordinateSystem= 'geo',
+#'    geo= list(center= c(mean(flights$start_lon), mean(flights$start_lat)), zoom=7, map='world'),
+#'    series.param= list( type= 'lines',
 #'       data= lapply(ec.data(tmp, 'names'), function(x)
-#'         list(coords = list(c(x$start_lon,x$start_lat),
-#'                            c(x$end_lon,x$end_lat)),
+#'         list(coords = list(c(x$start_lon, x$start_lat),
+#'                            c(x$end_lon, x$end_lat)),
 #'              colr = x$color)
 #'       ),
 #'       lineStyle= list(curveness=0.3, width=3, color=ec.clmn('colr'))
-#'     ))
+#'     )
 #'   )
 #' } }
 #' 
@@ -123,14 +116,14 @@
 #' json <- jsonlite::read_json("https://echarts.apache.org/examples/data/asset/geo/USA.json")
 #' dusa <- USArrests
 #' dusa$states <- row.names(dusa)
-#' p <- ec.init(preset= FALSE,
-#'    series= list(list(type= 'map', map= 'USA', roam= TRUE, zoom= 3, left= -100, top= -30,
-#'        data= lapply(ec.data(dusa, 'names'), 
-#'            function(x) list(name=x$states, value=x$UrbanPop))
-#'    )),
-#'    visualMap= list(type='continuous', calculable=TRUE, 
-#'        inRange= list(color = rainbow(8)),
-#'        min= min(dusa$UrbanPop), max= max(dusa$UrbanPop))
+#' p <- ec.init(
+#'   series.param= list(type= 'map', map= 'USA', roam= TRUE, zoom= 3, left= -100, top= -30,
+#'     data= lapply(ec.data(dusa, 'names'),
+#'         function(x) list(name=x$states, value=x$UrbanPop))
+#'   ),
+#'   visualMap= list(type='continuous', calculable=TRUE,
+#'     inRange= list(color = rainbow(8)),
+#'     min= min(dusa$UrbanPop), max= max(dusa$UrbanPop))
 #' )
 #' p$x$registerMap <- list(list(mapName= 'USA', geoJSON= json))
 #' p
@@ -139,7 +132,8 @@
 #' #------ locale
 #' mo <- seq.Date(Sys.Date() - 444, Sys.Date(), by= "month")
 #' df <- data.frame(date= mo, val= runif(length(mo), 1, 10))
-#' p <- df |> ec.init(title= list(text= 'locale test'))
+#' p <- df |> ec.init(title= list(text= 'ZH locale test'),
+#'     toolbox= list(feature= list(saveAsImage= list(type='svg'))) )
 #' p$x$locale <- 'ZH'
 #' p$x$renderer <- 'svg'
 #' p
@@ -147,12 +141,11 @@
 #' 
 #' #------ Pie
 #' isl <- data.frame(name=names(islands), value=islands) |> filter(value>100) |> arrange(value)
-#' 
 #' ec.init( preset= FALSE,
-#'    title= list(text = "Landmasses over 60,000 mi\u00B2", left = 'center'),
+#'    title= list(text = "Landmasses over 60,000 sq.mi", left = 'center'),
 #'    tooltip= list(trigger='item'),   #, formatter= ec.clmn()),
 #'    series= list(list(type= 'pie', radius= '50%', 
-#'                      data= ec.data(isl, 'names'), name='mi\u00B2'))
+#'                      data= ec.data(isl, 'names'), name='sq.mi'))
 #' )
 #' 
 #' 
@@ -204,12 +197,12 @@
 #' if (interactive()) {
 #' iris |> group_by(Species) |>
 #'   mutate(size= log(Petal.Width*10)) |>  # add size as 6th column
-#'   ec.init(load= '3D',
-#'           xAxis3D= list(name= 'Petal.Length'),
-#'           yAxis3D= list(name= 'Sepal.Width'),
-#'           zAxis3D= list(name= 'Sepal.Length'),
-#'           legend= list(show= TRUE),
-#'     series.param= list(symbolSize= ec.clmn(6, scale=10))
+#'   ec.init(
+#'      xAxis3D= list(name= 'Petal.Length'),
+#'      yAxis3D= list(name= 'Sepal.Width'),
+#'      zAxis3D= list(name= 'Sepal.Length'),
+#'      legend= list(show= TRUE),
+#'      series.param= list(type='scatter3D', symbolSize= ec.clmn(6, scale=10))
 #'   )
 #' }
 #'
@@ -302,27 +295,23 @@
 #'   color= c("blue","purple","red","gold","blue","purple","red","gold")
 #' )
 #' df |> group_by(group) |> ec.init( 
-#'      preset= FALSE, legend= list(selectedMode= "single"),
-#'      timeline= list(show=TRUE),
-#'      series.param= list(type= 'pie', roseType= 'radius',
-#'        itemStyle= list(color=ec.clmn(5)), 
-#'        label= list(formatter=ec.clmn(4)),
-#'        encode=list(value='value', itemName='type'))
+#'    legend= list(show=TRUE),
+#'    timeline= list(show=TRUE),
+#'    series.param= list(type= 'pie', roseType= 'radius',
+#'      itemStyle= list(color=ec.clmn(5)), 
+#'      label= list(formatter=ec.clmn(4)),
+#'      encode=list(value='value', itemName='type'))
 #' )
 #'
 #'
 #' #------ Boxplot without grouping
 #' ds <- mtcars |> select(cyl, drat) |>
-#' 	 ec.data(format='boxplot', jitter=0.1, #layout= 'h',
-#'				symbolSize=5, itemStyle=list(opacity=0.9), 
-#'   			emphasis= list(itemStyle= list(
-#'   			   color= 'chartreuse', borderWidth=4, opacity=1))
-#' 	)
+#'   ec.data(format='boxplot', jitter=0.1, symbolSize=6 ) #,layout='c')
+#' ds$series[[1]]$color= 'LightGrey'
+#' ds$series[[1]]$itemStyle= list(color='DimGray')
 #' ec.init(
-#'   #colors= heat.colors(length(mcyl)),
 #'   legend= list(show= TRUE), tooltip= list(show=TRUE),
 #'   dataset= ds$dataset, series= ds$series, xAxis= ds$xAxis, yAxis= ds$yAxis,
-#'   series.param= list(color= 'LightGrey', itemStyle= list(color='DimGray'))
 #' ) |> ec.theme('dark-mushroom')
 #' 
 #' 
@@ -359,9 +348,9 @@
 #'     list('Jasmin Krause', 52, 'Musician', 287, '2011-02-14'),
 #'     list('Li Lei', 37, 'Teacher', 219, '2011-02-18'),
 #'     list('Karle Neumann', 25, 'Engineer', 253, '2011-04-02'),
-#'     list('Adrian Groß', 19, 'Teacher', NULL, '2011-01-16'),
+#'     list('Adrian Gro?', 19, 'Teacher', NULL, '2011-01-16'),
 #'     list('Mia Neumann', 71, 'Engineer', 165, '2011-03-19'),
-#'     list('Böhm Fuchs', 36, 'Musician', 318, '2011-02-24'),
+#'     list('B?hm Fuchs', 36, 'Musician', 318, '2011-02-24'),
 #'     list('Han Meimei', 67, 'Engineer', 366, '2011-03-12'))),
 #'   list(transform = list(type= 'sort', config=list(
 #'     list(dimension='profession', order='desc'),
@@ -415,7 +404,7 @@
 #' ec.init(preset= FALSE,
 #'         series= list(list(
 #'           type = 'gauge', max = 160, min=40,
-#'           detail = list(formatter='\U1F9E0={value}'),
+#'           detail = list(formatter='{value}'),
 #'           data = list(list(value=85, name='IQ test')) )) )
 #' 
 #' 
@@ -453,21 +442,20 @@
 #'
 #'
 #' # graph plot with same data ---------------
-#' ec.init(preset= FALSE,
-#'         title= list(text= 'Graph'),
-#'         tooltip= list(show= TRUE),
-#'         series= list(list(
-#'           type= 'graph',
-#'           layout= 'force',   # try 'circular' too
-#'           data= lapply(data,
-#'              function(x) list(name= x$node, tooltip= list(show=FALSE))),
-#'           edges= lapply(data,
-#'              function(x) { x$lineStyle <- list(width=x$value); x }),
-#'           emphasis= list(focus= 'adjacency',
-#'                          label= list(position= 'right', show=TRUE)),
-#'           label= list(show=TRUE), roam= TRUE, zoom= 4,
-#'           tooltip= list(textStyle= list(color= 'blue')),
-#'           lineStyle= list(curveness= 0.3) ))
+#' ec.init(
+#'    title= list(text= 'Graph'),
+#'    tooltip= list(show= TRUE),
+#'    series= list(list(
+#'       type= 'graph',
+#'       layout= 'force',   # try 'circular' too
+#'       data= data,
+#'       edges= lapply(data,
+#'          function(x) { x$lineStyle <- list(width=x$value); x }),
+#'       emphasis= list(focus= 'adjacency',
+#'                      label= list(position= 'right', show=TRUE)),
+#'       label= list(show=TRUE), roam= TRUE, zoom= 4,
+#'       tooltip= list(textStyle= list(color= 'blue')),
+#'       lineStyle= list(curveness= 0.3) ))
 #' )
 #' 
 #' 
@@ -481,12 +469,38 @@
 #'        legend <- list(show=TRUE)  # show first legend to share
 #' })
 #' q2 <- main |> ec.upd({ series[[1]]$encode <- list(y='wt'); yAxis$name <- 'wt' })
-#' #if (interactive()) {   # browsable
-#'   ec.util(cmd='layout', list(q1,q2), cols=2, title='group connect')
-#' #}
+#' ec.util(cmd='layout', list(q1,q2), cols=2, title='group connect')
 #' 
 #' 
-#' #------ Events in Shiny
+#' #------ Javascript execution: ec.init 'js' parameter demo
+#' # in single item scenario (js=jcode), execution is same as j3 below
+#' if (interactive()) {
+#'  j1 <- "winvar= 'j1';" # set window variables
+#'  j2 <- "opts.title.text= 'changed';"   # opts exposed
+#'  j3 <- "ww= chart.getWidth(); alert('width:'+ww);"  # chart exposed
+#'  ec.init(js= c(j1, j2, j3), title= list(text= 'Title'), 
+#'    series.param= list(name='sname'),
+#'    legend= list(formatter= ec.clmn("function(name) {
+#'      return name +' - '+ this.winvar; }"))
+#'  )
+#' }
+#' 
+#' #------ echarty Javascript built-in functions
+#' jtgl <- "() => { 
+#'   ch1 = ec_chart(echwid);   // takes the auto-assigned id
+#' //ch1 = ec_chart('myTree'); // manual id is OK too
+#'   opts = ch1.getOption();
+#' //opts = ec_option(echwid);  // for reading, without setOption
+#'   opts.series[0].orient= opts.series[0].orient=='TB' ? 'LR':'TB';
+#'   ch1.setOption(opts); }"
+#' dbut <- ec.util(cmd='button', text='toggle', js=jtgl)
+#' data <- list(list(name='root', children=list(list(name='A',value=1),list(name='B',value=3))))
+#' ec.init( # elementId='myTree',
+#'   series.param= list(type='tree', data=data, symbolSize=33), graphic= list(dbut)
+#' )
+#' 
+#' 
+#' #------ Events in Shiny ----------
 #' if (interactive()) {
 #'   library(shiny); library(dplyr); library(echarty)
 #' 
@@ -520,9 +534,3 @@
 #' #  run command: demo(eshiny)
 #' 
 #' }  # donttest
-#' @export 
-ec.examples <- function(){
-  cat("copy/paste code from ?ec.examples Help\n 
-      Or run all examples at once with example('ec.examples') to see in Viewer.")
-}
-

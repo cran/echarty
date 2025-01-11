@@ -4,7 +4,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-## ----opt, echo=FALSE, include=FALSE-------------------------------------------
+## ----opt, message=FALSE, echo=TRUE--------------------------------------------
 # set/get global options
 options('echarty.theme'='jazz') # set
 getOption('echarty.theme')      # get

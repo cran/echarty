@@ -6,15 +6,15 @@ test_that("serie from ec.util with cartesian3D", {
 
   # usage for LIDAR data
   library(sf)
-  tmp <- st_as_sf(data.frame(x=c(-70,-70,-70), y=c(45, 46, 47), z=c(1,2,3)), 
-                  coords= c('x','y','z'), crs= st_crs(4326))
-  p <- ec.init(load= c('3D'),
-               series= ec.util(df= tmp, cs= 'cartesian3D')
-               ,tooltip= list(formatter= '{b}')
+  tmp <- st_as_sf(data.frame(
+      x=c(-60,-40,-20), y=c(45, 35, 25), z=c(1,2,3), name=c('p1','p2','p3')), 
+    coords= c('x','y','z'), crs= st_crs(4326))
+  p <- ec.init(load='3D', tooltip= list(formatter='{c}'),
+    series= ec.util(df= tmp, cs='cartesian3D')
   )
   expect_s3_class(p$x$opts$series[[1]]$data[[2]]$value, 'sfg')
-  expect_equal(as.numeric(p$x$opts$series[[1]]$data[[2]]$value), c(-70,46,2))
-  expect_type( p$x$opts$xAxis3D[[1]],'list')
+  expect_equal(as.numeric(p$x$opts$series[[1]]$data[[2]]$value), c(-40,35,2))
+  expect_type( p$x$opts$xAxis3D, 'list')
 })
 
 test_that("shapefiles with multi-POLYGONS", {
@@ -35,7 +35,7 @@ test_that("shapefile LINES from ZIP", {
   if (interactive()) {  # creates a subfolder 'railways'
     library(sf)
     fname <- ec.util(cmd= 'sf.unzip', 
-                     url= 'https://mapcruzin.com/sierra-leone-shapefiles/railways.zip')
+          url= 'https://helgasoft.github.io/echarty/test/sl.shape.railways.zip')
     nc <- as.data.frame(st_read(fname, quiet=TRUE))
     p <- ec.init(load= 'leaflet',
        js= ec.util(cmd= 'sf.bbox', bbox= st_bbox(nc$geometry)), 
@@ -71,13 +71,11 @@ test_that("shapefile LINESTRING and MULTILINESTRING", {
 
 test_that("shapefile POINTS from ZIP", {
   fn <- ec.util(cmd= 'sf.unzip', 
-          url= 'https://mapcruzin.com/sierra-leone-shapefiles/points.zip')
-  expect_true(endsWith(fn, 'points.shp'))
-
-  if (interactive()) {  # creates a subfolder 'points'
+                url= 'https://helgasoft.github.io/echarty/test/sl.shape.points.zip')
+  if (!startsWith(fn, 'ERROR')) {
+    expect_true(endsWith(fn, 'points.shp'))     # creates a subfolder 'points'
+#  if (interactive()) {
     library(sf)
-    fn <- ec.util(cmd= 'sf.unzip', 
-                  url= 'https://mapcruzin.com/sierra-leone-shapefiles/points.zip')
     nc <- as.data.frame(st_read(fn, quiet=TRUE)) |> head(10)
     p <- ec.init(load= c('leaflet'),
        js= ec.util(cmd= 'sf.bbox', bbox= st_bbox(nc$geometry)), 
@@ -88,7 +86,7 @@ test_that("shapefile POINTS from ZIP", {
     expect_equal(round(as.numeric(p$x$opts$series[[1]]$data[[2]]$value),1), c(-13.3,8.5))
     expect_true( p$x$opts$leaflet$roam)
   }
-  else expect_equal(1,1)
+#  else expect_equal(1,1)
 })
 
 test_that("layout", {
@@ -98,19 +96,23 @@ test_that("layout", {
   expect_equal(p$children[[2]]$children[[2]]$children[[2]]$children[[1]]$x$theme, 'macarons')
   # test for 2nd row
   expect_equal(p$children[[2]]$children[[4]]$children[[1]]$children[[1]]$x$theme, 'dark-mushroom')
+  list(cars |> ec.init()) |> ec.util(cmd='layout', rows=2, title= 'coveralls')
+  list(cars |> ec.init()) |> ec.util(cmd='layout', title= 'coveralls')
 })
 
 test_that("tabset with pairs", {
-  p1 <- cars |> ec.init(grid= list(top= 20))
-  p2 <- mtcars |> ec.init()
+  p1 <- cars |> ec.init(grid= list(top= 20), height=333)
+  p2 <- mtcars |> ec.init(height=333)
   r <- ec.util(cmd='tabset', cars=p1, mtcars=p2)
-  expect_equal(r[[2]]$children[[5]]$children[[1]]$children[[1]][[1]]$x$opts$dataset[[1]]$source[[1]], c("speed", "dist"))
-  expect_equal(r[[2]]$children[[5]]$children[[1]]$name, "section")
-  expect_equal(r[[2]]$children[[2]]$children[[1]], "cars")
   expect_s3_class(r[[2]]$children[[5]]$children[[2]]$children[[1]][[1]], 'echarty')
+  expect_equal(r[[2]]$children[[2]]$children[[1]], "cars")
+  expect_equal(r[[2]]$children[[5]]$children[[1]]$children[[1]][[1]]$x$opts$dataset[[1]]$dimensions, c("speed", "dist"))
+  expect_equal(r[[2]]$children[[5]]$children[[1]]$name, "section")
+  expect_equal(r[[2]]$children[[5]]$children[[1]]$children[[1]][[1]]$height, 333)
 })
 
 test_that("tabset with pipe", {
+  if(interactive()) {  # for CRAN
   r <- htmltools::browsable(
     lapply(iris |> group_by(Species) |> group_split(), function(x) { 
       x |> ec.init(ctype= 'scatter', title= list(text= unique(x$Species)))
@@ -118,37 +120,39 @@ test_that("tabset with pipe", {
   )
   expect_equal(r[[2]]$children[[7]]$children[[2]]$children[[1]][[1]]$width, NULL)
   expect_equal(as.character(r[[2]]$children[[6]]$children[[1]]), "virginica")
+  }
 })
 
 test_that("morph 1", {
+
+  colors <- c("blue","red")
   mc <- mtcars |> filter(cyl<8)
-  datt <- function(idx) { return(mc[mc$cyl==idx,]$hp) }
-  colors <- c("blue","red","green","yellow")
-  
+  cyls <- as.character(sort(unique(mc$cyl)))
+  sers <- lapply(mc |> group_by(cyl) |> group_split(), \(x) {
+    cyl <- as.character(unique(x$cyl))
+    list(type='scatter', id=cyl, dataGroupId=cyl, 
+         data= ec.data(x|>select(mpg,hp)),
+         universalTransition= list(enabled= TRUE))
+  })
+  dbar <- ec.data(mc |> group_by(cyl) |> summarize(value= mean(hp)) |>
+              mutate(groupId= as.character(cyl)),'names')
   oscatter <- list(
-    xAxis= list(scale=TRUE),
-    yAxis= list(scale=TRUE), color= colors,
-    series=list(
-      list(type='scatter', id=4, dataGroupId=4, data= datt(4),
-           universalTransition= list(enabled= TRUE)),
-      list(type='scatter', id=6, dataGroupId=6, data= datt(6),
-           universalTransition= list(enabled=TRUE)) 
-    )
+    title= list(subtext='click points to morph'), color= colors,
+    xAxis= list(scale=TRUE, name='mpg'),
+    yAxis= list(scale=TRUE, name='hp'),
+    series= sers
   )
   obar <- list(
-    title= list(text= 'Average'),
-    xAxis= list(type= 'category', data= list('cyl4', 'cyl6')),
-    yAxis= list(show= TRUE), color= colors,
+    title= list(text= 'Average'), color= colors,
+    xAxis= list(type= 'category', data= paste0('cyl',cyls)),
+    yAxis= list(show= TRUE),
     series= list(list(
       type= 'bar', id= 'average', colorBy= 'data',
-      data= list(
-        list(value= mean(datt(4)), groupId=4),
-        list(value= mean(datt(6)), groupId=6)),
-      universalTransition=list(enabled= TRUE, 
-                               seriesKey=c(4, 6))
+      data= dbar,
+      universalTransition=list(enabled= TRUE, seriesKey= cyls)
     ))
   )
-  
+
   auto <- " cnt = 0;
   setInterval(() => {
     cnt++;
@@ -169,7 +173,7 @@ test_that("morph 1", {
 test_that("morph 2", {
   setd <- function(type) {
     mtcars |> group_by(cyl) |> ec.init(ctype= type) |> ec.upd({
-      title <- list(subtext='mouseover points to morph')
+      title <- list(subtext='click points to morph')
       xAxis <- list(scale=TRUE)
       series <- lapply(series, function(ss) {
         ss$groupId <- ss$name
@@ -262,6 +266,22 @@ test_that("button as graphic element", {
   expect_s3_class(p$onclick, 'JS_EVAL')
 })
 
+test_that("ec.paxis - parallel axis", {
+  df <- as.data.frame(state.x77) |> head(10)
+  p <- df |> ec.init(ctype= 'parallel',
+      parallelAxis= ec.paxis(df, cols= c('Illiteracy','Population','Income'), inverse=T),
+      series.param= list(lineStyle= list(width=3))
+  )
+  expect_equal(length(p$x$opts$dataset[[1]]$source[[1]]), 8)
+  expect_equal(p$x$opts$parallelAxis[[3]]$name, 'Income')
+  expect_true(p$x$opts$parallelAxis[[3]]$inverse)
+  
+  p <- df |> ec.init(ctype= 'parallel') |>     # chained ec.paxis
+    ec.paxis(cols= c('Illiteracy','Population','Income'))
+  expect_equal(p$x$opts$parallelAxis[[1]]$dim, 2)
+
+})
+
 test_that("ec.data dendrogram", {
   hc <- hclust(dist(USArrests), "average")
   p <- ec.init(preset= FALSE,
@@ -276,6 +296,12 @@ test_that("ec.data dendrogram", {
 
 test_that("ec.data boxlpot", {
   
+  # simple boxplot
+  ds <- mtcars |> select(cyl, drat) |>
+  ec.data(format='boxplot', outliers=TRUE, layout= 'v')
+  #ec.init(dataset= ds$dataset, series= ds$series, xAxis= ds$xAxis, yAxis= ds$yAxis)
+  expect_equal(ds$series[[1]]$type, 'boxplot')
+
   # without grouping -------------------
   p <- mtcars |> relocate(cyl,mpg) |> ec.data(format='boxplot', outliers=TRUE)
   expect_equal(p$series[[1]]$type, 'boxplot')
@@ -292,7 +318,6 @@ test_that("ec.data boxlpot", {
   	emphasis= list(itemStyle= list(color= 'chartreuse', borderWidth=4, opacity=1))
 	)
   p <- ec.init(
-    #colors= heat.colors(length(mcyl)),
     legend= list(show= TRUE), tooltip= list(show=TRUE),
     dataset= ds$dataset, series= ds$series, xAxis= ds$xAxis, yAxis= ds$yAxis
   ) |> 
@@ -366,7 +391,7 @@ test_that("ec.data treeTK", {
   expect_equal(p$x$opts$series[[1]]$data[[1]]$value, 2201)
 })
 
-test_that("ec.data 'names' + nasep", {
+test_that("ec.data 'names' + nasep, header", {
   df <- data.frame(name= c('A','B','C'), value= c(1,2,3),
         itemStyle_color= c('chartreuse','lightblue','pink'),
         itemStyle_decal_symbol= c('rect','diamond','none'),                   
@@ -377,14 +402,18 @@ test_that("ec.data 'names' + nasep", {
   expect_equal(p$x$opts$series[[1]]$data[[1]]$emphasis$itemStyle$color, 'green')
   expect_equal(p$x$opts$series[[1]]$data[[2]]$itemStyle$decal$symbol, 'diamond')
   expect_equal(p$x$opts$series[[1]]$data[[3]]$itemStyle$color, 'pink')
+  p <- cars |> ec.data(header=TRUE)
+  expect_equal(p[[1]][1], 'speed')
+  p <- mtcars |> ec.data(format='values')
+  expect_equal(p[[1]]$value[1], 21)
 })
 
 test_that("ec.inspect and ec.fromJson", {
   p <- mtcars |> group_by(gear) |> 
-    # param to increase coverage, no sense otherwise
+    # param to increase Test Coverage, no sense otherwise
     ec.init(series.param= list(dimensions= c('m','c','d'), encode= list(y='qsec'))) |> 
     ec.inspect('data')
-  expect_match(p[1], "rows= 33", fixed=TRUE)
+  expect_match(p[1], "rows= 32", fixed=TRUE)
   expect_match(p[2], "filter", fixed=TRUE)
 
   txt <- '{

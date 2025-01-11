@@ -27,11 +27,11 @@ Once chart changes had been made, they need to be sent back to the widget for di
 }
 \examples{
 if (interactive()) {
-   demo(eshiny, package='echarty')
+ # run with  demo(eshiny, package='echarty')
 }
 
 }
 \seealso{
 \link{ecs.proxy}, \link{ecs.render}, \link{ecs.output} \cr
-Read about event handling in \link{-- Introduction --}, code in \link{ec.examples}.
+Read about event handling in \link{-- Introduction --}, or from \href{https://github.com/helgasoft/echarty/blob/main/demo/examples.R}{examples}.
 }

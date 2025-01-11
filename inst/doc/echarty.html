@@ -39,6 +39,107 @@ ul.task-list{list-style: none;}
 
 
 
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
 
 
 
@@ -242,11 +343,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div id="description" class="section level2">
 <h2>Description</h2>
 <p><strong>echarty</strong> provides a lean interface between R and
-Javascript library <a href="https://echarts.apache.org/en/index.html">ECharts</a>. We
-encourage users to follow the original ECharts <a href="https://echarts.apache.org/en/option.html">API documentation</a>
+Javascript library <a href="https://echarts.apache.org/en/index.html">ECharts</a>.<br />
+We encourage users to follow the original ECharts <a href="https://echarts.apache.org/en/option.html">API documentation</a>
 to construct charts with echarty.<br />
-The main command <strong>ec.init</strong> can set multiple native
-ECharts options to build a chart.<br />
+Main command <strong>ec.init</strong> can set multiple native ECharts
+options to build a chart.<br />
 The benefits - learn a very limited set of commands, and enjoy the
 <strong>full functionality</strong> of ECharts.</p>
 </div>
@@ -265,18 +366,18 @@ commands have three prefixes to help with auto-completion:</p>
 </div>
 <div id="events" class="section level2">
 <h2>Events</h2>
-<p>Event handling is usually necessary only in Shiny. See code in <a href="https://github.com/helgasoft/echarty/blob/main/demo/eshiny.R">eshiny.R</a>,
+<p>For event handling in Shiny see sample code in <a href="https://github.com/helgasoft/echarty/blob/main/demo/eshiny.R">eshiny.R</a>,
 run as <code>demo(eshiny)</code>.<br />
-echarty has three built-in event callbacks - <em>click</em>,
+Echarty has three built-in event callbacks - <em>click</em>,
 <em>mouseover</em>, <em>mouseout</em>. All other ECharts <a href="https://echarts.apache.org/en/api.html#events">events</a> could be
 initialized through <code>p$x$capture</code>. Another option is to use
-<code>p$x$on</code> with JavaScript handlers, see code in <a href="https://github.com/helgasoft/echarty/blob/main/R/examples.R">ec.examples</a>.</p>
+<code>p$x$on</code> with JavaScript handlers, see code in <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">examples</a>.</p>
 </div>
 <div id="widget-x-parameters" class="section level2">
 <h2>Widget <strong>x</strong> parameters</h2>
 <p>These are <em>htmlwidget</em> and <em>ECharts</em> initialization
 parameters supported by echarty. There are code samples for most of them
-in <a href="https://github.com/helgasoft/echarty/blob/main/R/examples.R">ec.examples</a>:</p>
+in <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">examples</a>:</p>
 <ul>
 <li>capture = event name(s), to monitor events, usually in Shiny</li>
 <li>on = define JavaScript code for event handling, see <a href="https://echarts.apache.org/en/api.html#echartsInstance.on">ECharts</a></li>
@@ -293,31 +394,41 @@ parameter of <em>ec.init</em></li>
 </div>
 <div id="r-vs-javascript-numbering" class="section level2">
 <h2>R vs Javascript numbering</h2>
-<p>R indexes are counted starting from 1.<br />
-JS indexes are counted starting from 0.<br />
-echarty supports R-counting in series-encode
-<strong>x,y,tooltip</strong> and visualMap-continuous
-<strong>dimension</strong> when set through <em>ec.init</em>.<br />
-All other indexes like <em>xAxisIndex</em>, <em>gridIndex</em>, etc.
-need to be set in JS-counting (for now).</p>
+<p>R language counting starts from 1.<br />
+Javascript (JS) counting starts from 0.<br />
+<em>ec.init</em> supports R-counting of indexes (ex. encode) and
+dimension (ex. visualMap).<br />
+<em>ec.upd</em> requires indexes and dimensions to be set with
+JS-counting.</p>
+</div>
+<div id="javascript-built-in-functions" class="section level2">
+<h2>Javascript built-in functions</h2>
+<p>To allow access to charts from JS.<br />
+<em>ec_chart(id)</em> - get the chart object by id (former
+get_e_charts)<br />
+<em>ec_option(id)</em> - get the chart’s option object by id (former
+get_e_charts_opt)<br />
+Parameter <em>id</em> could be the internal variable <em>echwid</em>, or
+the value set through <em>ec.init</em> parameter <em>elementId</em>. See
+demo code in <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">examples</a></p>
 </div>
 <div id="code-examples" class="section level2">
 <h2>Code examples</h2>
 <p>Here is the complete list of sample code
 <strong>locations</strong>:</p>
 <ul>
-<li><a href="https://github.com/helgasoft/echarty/blob/main/R/examples.R">ec.examples</a></li>
-<li>code in <a href="https://github.com/helgasoft/echarty/tree/main/tests/testthat">Github
-tests</a></li>
-<li>command examples, like in <em>ec.init</em></li>
+<li>website <a href="https://helgasoft.github.io/echarty/articles/gallery.html">gallery</a></li>
+<li><a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">demo
+examples</a></li>
 <li>Shiny code is in <a href="https://github.com/helgasoft/echarty/blob/main/demo/eshiny.R">eshiny.R</a>,
 run with <code>demo(eshiny)</code></li>
-<li>website <a href="https://helgasoft.github.io/echarty/gallery.html">gallery</a> and
-<a href="https://helgasoft.github.io/echarty/">tutorials</a></li>
 <li>demos on <a href="https://rpubs.com/echarty">RPubs</a></li>
 <li>searchable <a href="https://gist.github.com/helgasoft">gists</a></li>
 <li>answers to <a href="https://github.com/helgasoft/echarty/issues">Github
 issues</a></li>
+<li>code in <a href="https://github.com/helgasoft/echarty/tree/main/tests/testthat">Github
+tests</a></li>
+<li>command examples, like in <em>?ec.init</em></li>
 </ul>
 </div>
 <div id="global-options" class="section level2">
@@ -330,6 +441,11 @@ Echarty uses the following options:</p>
 <li>echarty.font = font family name</li>
 <li>echarty.urlTiles = tiles URL template for leaflet maps</li>
 </ul>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># set/get global options</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">options</span>(<span class="st">&#39;echarty.theme&#39;</span><span class="ot">=</span><span class="st">&#39;jazz&#39;</span>) <span class="co"># set</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">getOption</span>(<span class="st">&#39;echarty.theme&#39;</span>)      <span class="co"># get</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;jazz&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">options</span>(<span class="st">&#39;echarty.theme&#39;</span><span class="ot">=</span><span class="cn">NULL</span>)   <span class="co"># remove</span></span></code></pre></div>
 </div>
 
 
