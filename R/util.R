@@ -757,15 +757,7 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
   n <- seq_along(df[[1]])       #  all df columns have the same length
   tmp <- lapply(n, \(i) lapply(df, "[[", i))  # preserve column types
   
-  if (format=='dataset') {
-    datset <- lapply(tmp, unname)
-    if (header)
-      datset <- c(list(colnames(df)), datset)
-  } 
-  else if (format=='values' || isTRUE(format)) {
-    datset <- lapply(tmp, \(x) list(value=unlist(x, use.names=FALSE)))
-  } 
-  else if (format=='boxplot') {
+  if (format=='boxplot') {
     args <- list(...)
     rady <- if ('ol.radius' %in% names(args)) args$ol.radius else NULL
     jitter <- if ('jitter' %in% names(args)) args$jitter else 0
@@ -908,6 +900,14 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
   		series <- append(series, serj)
     }
     return(list(dataset= dataset, series= series, xAxis=xaxis, yAxis=yaxis))
+  } 
+  else if (format=='dataset') {
+    datset <- lapply(tmp, unname)
+    if (header)
+      datset <- c(list(colnames(df)), datset)
+  } 
+  else if (format=='values' || isTRUE(format)) {
+    datset <- lapply(tmp, \(x) list(value=unlist(x, use.names=FALSE)))
   } 
   else { # format=='names'
     args <- list(...)

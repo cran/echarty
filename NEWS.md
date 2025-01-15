@@ -1,6 +1,6 @@
 # history of package _echarty_
 
-# echarty 1.6.5  latest in development
+# echarty 1.6.6  latest in development
 
 * upgrade ECharts to v.5.6.0, built with R v.4.4.2.
 * auto-load 3D plugin when 3D attributes present (xAxis3D, bar3D, etc.).
