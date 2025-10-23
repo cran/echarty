@@ -1,6 +1,24 @@
 # history of package _echarty_
 
-# echarty 1.6.6  latest in development
+# echarty 1.7.0  latest in development
+
+* _ec.init_ support for _on_,_off_,_register*_,etc. chart instance and echarts API
+* new value 'loadRemote' for parameter _ask_ to serve new v.6 custom-series
+* ability to attach data columns to item styles through _encode$data_
+* new flame (or icicle) hierarchical chart support as custom series
+
+# echarty 1.6.7
+
+* upgrade ECharts to v.6.0.0, built with R v.4.4.3.
+* new signature of _ec.util_: _cmd_ is now first, to avoid writing 'cmd=...'
+* improved _tabset_ in _ec.util_
+* new _ec.init_ parameter _iniOpts_ for initialization options
+* new helper _ec.registerMap_ for geoJSON and SVG maps
+* new _ec.data_ helper _'borders'_: get geoJSON region borders from data.frame
+* auto-add _load='world'_ if missing in series _map='world'_
+* auto-register _ecStat.transform_ when _load='ecStat'_ is set
+
+# echarty 1.6.6  on CRAN
 
 * upgrade ECharts to v.5.6.0, built with R v.4.4.2.
 * auto-load 3D plugin when 3D attributes present (xAxis3D, bar3D, etc.).
@@ -11,8 +29,9 @@
 * add _event_ parameter in _ec.util_ for cmd='morph'.
 * integrate website with library using _pkgdown_.
 * moved _examples.R_ into 'demo' folder, _ec.examples_ is no longer a command.
+* more tests to increase coverage without disturbing CRAN submission
 
-# echarty 1.6.4  on CRAN
+# echarty 1.6.4
 
 * upgrade ECharts to v.5.5.0, built with R v.4.4.0.
 * add _nasep_ parameter to _ec.data('names')_ to easily set nested lists from a _data.frame_.

@@ -4,76 +4,75 @@
 #' 
 #' tabset, table layout, support for GIS shapefiles through library 'sf'
 #'  
-#' @param cmd utility command, see Details
-#' @param js optional JavaScript function, default is NULL.
-#' @param event optional event name for cmd='morph'.
-#' @param ... Optional parameters for the command \cr
-#'      for \emph{sf.series} - see \href{https://echarts.apache.org/en/option.html#series-scatter.type}{points}, \href{https://echarts.apache.org/en/option.html#series-lines.type}{polylines}, polygons(itemStyle).\cr
-#'      for \emph{tabset} parameters should be in format \emph{name1=chart1, name2=chart2}, see example\cr
+#' @param cmd Utility command name, see Details.
+#' @param ... Optional parameters for each command.
+#' @param js Optional JavaScript function, default is NULL.
+#' @param event Optional event name for cmd='morph', default is 'click'.
 #' @details 
 #' **cmd = 'sf.series'**\cr
-#' \verb{  }Build _leaflet_ or \href{https://echarts.apache.org/en/option.html#geo.map}{geo} map series from shapefiles.\cr
-#' \verb{  }Supported types: POINT, MULTIPOINT, LINESTRING, MULTILINESTRING, POLYGON, MULTIPOLYGON \cr
-#' \verb{  }Coordinate system is _leaflet_(default), _geo_ or _cartesian3D_ (for POINT(xyz))\cr
-#' \verb{  }Limitations:\cr 
-#' \verb{     }polygons can have only their name in tooltip,  \cr
-#' \verb{     }assumes Geodetic CRS is WGS 84, for conversion use \link[sf]{st_transform} with _crs=4326_.\cr
-#' \verb{  }Parameters:\cr 
-#' \verb{     }df - value from \link[sf]{st_read}\cr
-#' \verb{     }nid - optional column name for name-id used in tooltips\cr
-#' \verb{     }cs - optional _coordinateSystem_ value, default 'leaflet'\cr
-#' \verb{     }verbose - optional, print shapefile item names in console\cr
-#' \verb{  }Returns a list of chart series\cr
+#' \verb{     } Build _leaflet_ or \href{https://echarts.apache.org/en/option.html#geo.map}{geo} map series from shapefiles.\cr
+#' \verb{     } Supported types: POINT, MULTIPOINT, LINESTRING, MULTILINESTRING, POLYGON, MULTIPOLYGON \cr
+#' \verb{     } Coordinate system is _leaflet_(default), _geo_ or _cartesian3D_ (for POINT(xyz))\cr
+#' \verb{     } Limitations:\cr 
+#' \verb{     }\verb{     } polygons can have only their name in tooltip,  \cr
+#' \verb{     }\verb{     } assumes Geodetic CRS is WGS 84, for conversion use \link[sf]{st_transform} with _crs=4326_.\cr
+#' \verb{     } Parameters:\cr 
+#' \verb{     }\verb{     } df - value from \link[sf]{st_read}\cr
+#' \verb{     }\verb{     } nid - optional column name for name-id used in tooltips\cr
+#' \verb{     }\verb{     } cs - optional _coordinateSystem_ value, default 'leaflet'\cr
+#' \verb{     }\verb{     } verbose - optional, print shapefile item names in console\cr
+#' \verb{     } Returns a list of chart series\cr
 #' **cmd = 'sf.bbox'**\cr
-#' \verb{  }Returns JavaScript code to position a map inside a bounding box from \link[sf]{st_bbox}, for leaflet only.\cr
+#' \verb{     } Returns JavaScript code to position a map inside a bounding box from \link[sf]{st_bbox}, for leaflet only.\cr\cr
 #' **cmd = 'sf.unzip'**\cr
-#' \verb{  }Unzips a remote file and returns local file name of the unzipped .shp file\cr
-#' \verb{     }url - URL of remote zipped shapefile\cr
-#' \verb{     }shp - optional name of .shp file inside ZIP file if multiple exist. Do not add file extension. \cr
-#' \verb{  }Returns full name of unzipped .shp file, or error string starting with 'ERROR'\cr
+#' \verb{     } Unzips a remote file and returns local file name of the unzipped .shp file\cr
+#' \verb{     }\verb{     } url - URL of remote zipped shapefile\cr
+#' \verb{     }\verb{     } shp - optional name of .shp file inside ZIP file if multiple exist. Do not add file extension. \cr
+#' \verb{     } Returns full name of unzipped .shp file, or error string starting with 'ERROR'\cr\cr
 #' **cmd = 'geojson'** \cr
-#' \verb{  }Custom series list from geoJson objects\cr
-#' \verb{     }geojson - object from \link[jsonlite]{fromJSON}\cr
-#' \verb{     }cs - optional _coordinateSystem_ value, default 'leaflet'\cr
-#' \verb{     }ppfill - optional fill color like '#F00', OR NULL for no-fill, for all Points and Polygons\cr
-#' \verb{     }nid - optional feature property for item name used in tooltips\cr
-#' \verb{     }... - optional custom series attributes like _itemStyle_\cr
-#' \verb{  }Can display also geoJson _feature properties_: color; lwidth, ldash (lines); ppfill, radius (points)\cr
+#' \verb{     } Custom series list from geoJson objects\cr
+#' \verb{     }\verb{     } geojson - object from \link[jsonlite]{fromJSON}\cr
+#' \verb{     }\verb{     } cs - optional _coordinateSystem_ value, default 'leaflet'\cr
+#' \verb{     }\verb{     } ppfill - optional fill color like '#F00', OR NULL for no-fill, for all Points and Polygons\cr
+#' \verb{     }\verb{     } nid - optional feature property for item name used in tooltips\cr
+#' \verb{     }\verb{     } ... - optional custom series attributes like _itemStyle_\cr
+#' \verb{     } Can display also geoJson _feature properties_: color; lwidth, ldash (lines); ppfill, radius (points)\cr\cr
 #' **cmd = 'layout'** \cr
-#' \verb{  }Multiple charts in table-like rows/columns format\cr
-#' \verb{     }... - List of charts\cr
-#' \verb{     }title - optional title for the entire set\cr
-#' \verb{     }rows - optional number of rows\cr 
-#' \verb{     }cols - optional number of columns\cr
-#' \verb{  }Returns a container \link[htmltools]{div} in rmarkdown, otherwise \link[htmltools]{browsable}.\cr
-#' \verb{  }For 3-4 charts one would use multiple series within a \href{https://echarts.apache.org/en/option.html#grid}{grid}. \cr
-#' \verb{  }For greater number of charts _ec.util(cmd='layout')_ comes in handy\cr
+#' \verb{     } Multiple charts in table-like rows/columns format\cr
+#' \verb{     }\verb{     } ... - List of charts\cr
+#' \verb{     }\verb{     } title - optional title for the entire set\cr
+#' \verb{     }\verb{     } rows - optional number of rows\cr 
+#' \verb{     }\verb{     } cols - optional number of columns\cr
+#' \verb{     } Returns a container \link[htmltools]{div} in rmarkdown, otherwise \link[htmltools]{browsable}.\cr
+#' \verb{     } For 3-4 charts one would use multiple series within a \href{https://echarts.apache.org/en/option.html#grid}{grid}. \cr
+#' \verb{     } For greater number of charts _ec.util(cmd='layout')_ comes in handy\cr\cr
 #' **cmd = 'tabset'** \cr
-#' \verb{     }... - a list name/chart pairs like \emph{n1=chart1, n2=chart2}, each tab may contain a chart.\cr
-#' \verb{     }tabStyle - tab style string, see default \emph{tabStyle} variable in the code\cr
-#' \verb{  }Returns A) \link[htmltools]{tagList} of tabs when in a pipe without '...' params, see example\cr
-#' \verb{  }Returns B) \link[htmltools]{browsable} when '...' params are provided by user\cr
-#' \verb{  }Please note that sometimes those tabsets do not merge well inside advanced web pages.\cr
+#' \verb{     }\verb{     } ... - a list of name/chart pairs like \emph{n1=chart1, n2=chart2}, each tab may contain a chart, see example\cr
+#' \verb{     }\verb{     } tabStyle - tab style string, see default \emph{strTabStyle} variable in the code\cr
+#' \verb{     }\verb{     } width - optional width size for the tabset, in CSS format, default is 100%\cr
+#' \verb{     } Returns A) \link[htmltools]{browsable} when '...' params are provided\cr
+#' \verb{     } Returns B) \link[htmltools]{tagList} of tabs when in a pipe (no '...' params)\cr
+#' \verb{     } Please note that a maximum of five(5) tabs are supported by current _tabStyle_.\cr\cr
 #' **cmd = 'button'** \cr
-#' \verb{  }UI button to execute a JS function,\cr
-#' \verb{     }text - the button label\cr
-#' \verb{     }js - the JS function string\cr
-#' \verb{     }... - optional parameters for the \href{https://echarts.apache.org/en/option.html#graphic.elements-rect.type}{rect} element\cr
-#' \verb{  }Returns a graphic.elements-\href{https://echarts.apache.org/en/option.html#graphic.elements-rect.type}{rect} element.\cr
+#' \verb{     } UI button to execute a JS function,\cr
+#' \verb{     }\verb{     } text - the button label\cr
+#' \verb{     }\verb{     } js - the JS function string\cr
+#' \verb{     }\verb{     } ... - optional parameters for the \href{https://echarts.apache.org/en/option.html#graphic.elements-rect.type}{rect} element\cr
+#' \verb{     } Returns a graphic.elements-\href{https://echarts.apache.org/en/option.html#graphic.elements-rect.type}{rect} element.\cr\cr
 #' **cmd = 'morph'** \cr
-#' \verb{     }... - a list of charts or chart option lists\cr
-#' \verb{     }event - name of event for switching charts. Default is \emph{click}.\cr
-#' \verb{  }Returns a chart with ability to morph into other charts\cr
+#' \verb{     }\verb{     } ... - a list of charts or chart option lists\cr
+#' \verb{     }\verb{     } event - name of event for switching charts. Default is \emph{click}.\cr
+#' \verb{     } Returns a chart with ability to morph into other charts\cr\cr
 #' **cmd = 'fullscreen'** \cr
-#' \verb{  }A toolbox feature to toggle fullscreen on/off. Works in a browser, not in RStudio.\cr
+#' \verb{     } A toolbox feature to toggle fullscreen on/off. Works in a browser, not in RStudio.\cr\cr
 #' **cmd = 'rescale'** \cr
-#' \verb{     }v - input vector of numeric values to rescale\cr
-#' \verb{     }t - target range c(min,max), numeric vector of two\cr
+#' \verb{     }\verb{     } v - input vector of numeric values to rescale\cr
+#' \verb{     }\verb{     } t - target range c(min,max), numeric vector of two\cr\cr
 #' **cmd = 'level'** \cr
-#' \verb{  }Calculate vertical levels for timeline \emph{line} charts, returns a numeric vector\cr
-#' \verb{     }df - data.frame with _from_ and _to_ columns\cr
-#' \verb{     }from - name of 'from' column\cr
-#' \verb{     }to - name of 'to' column\cr
+#' \verb{     } Calculate vertical levels for timeline \emph{line} charts, returns a numeric vector\cr
+#' \verb{     }\verb{     } df - data.frame with _from_ and _to_ columns\cr
+#' \verb{     }\verb{     } from - name of 'from' column\cr
+#' \verb{     }\verb{     } to - name of 'to' column\cr
 #' 
 #' @examples
 #' library(dplyr)
@@ -86,31 +85,24 @@
 #'      series= ec.util(cmd= 'sf.series', df= nc, nid= 'NAME', itemStyle= list(opacity=0.3)),
 #'      tooltip= list(formatter= '{a}')
 #'   )
-#' 
-#'   htmltools::browsable(
-#'     lapply(iris |> group_by(Species) |> group_split(), 
-#'            function(x) {
-#'      x |> ec.init(ctype= 'scatter', title= list(text= unique(x$Species)))
-#'            }) |> 
-#'     ec.util(cmd= 'tabset')
-#'   )
-#' 
-#'   p1 <- cars |> ec.init(grid= list(top=26), height=333)  # move chart up
-#'   p2 <- mtcars |> arrange(mpg) |> ec.init(height=333, ctype='line')
-#'   ec.util(cmd= 'tabset', cars= p1, mtcars= p2)
-#' 
-#' 
-#'   cars |> ec.init(
-#'     graphic = list(
-#'       ec.util(cmd='button', text='see type', right='center', top=20,
-#'         js="function(a) {op=ec_option(echwid); alert(op.series[0].type);}")
-#'     )
-#'   )
-#' 
-#'   lapply(list('dark','macarons','gray','jazz','dark-mushroom'),
-#'     function(x) cars |> ec.init(grid= list(bottom=0)) |> ec.theme(x) ) |>
-#'   ec.util(cmd='layout', cols= 2, title= 'my layout')
 #' }
+#' 
+#' if (interactive()) {
+#'  p1 <- cars |> ec.init(grid= list(top=26), height=333)  # move chart up
+#'  p2 <- mtcars |> arrange(mpg) |> ec.init(height=333, ctype='line')
+#'  ec.util(cmd= 'tabset', cars= p1, mtcars= p2)
+#' 
+#'  lapply(list('dark','macarons','gray','dark-mushroom'),
+#'    function(x) cars |> ec.init(grid= list(bottom=5, top=10)) |> ec.theme(x) ) |>
+#'  ec.util(cmd='layout', cols= 2, title= 'Layout')
+#' }
+#' 
+#' cars |> ec.init(
+#'   graphic = list(
+#'     ec.util(cmd='button', text='see type', right='center', top=20,
+#'       js="function(a) {op=ec_option(echwid); alert(op.series[0].type);}")
+#'   )
+#' )
 #' 
 #' colors <- c("blue","red","green")
 #' cyls <- as.character(sort(unique(mtcars$cyl)))
@@ -121,7 +113,7 @@
 #'        universalTransition= TRUE)
 #' })
 #' oscatter <- list(
-#'   title= list(subtext='click points to morph'), 
+#'   title= list(text='Morph', left='center', subtext='click points to morph'), 
 #'   color= colors, tooltip= list(show=TRUE),
 #'   xAxis= list(scale=TRUE, name='mpg'), yAxis= list(scale=TRUE, name='hp'),
 #'   series= sers
@@ -140,7 +132,7 @@
 #'   
 #' @importFrom utils unzip
 #' @export
-ec.util <- function( ..., cmd='sf.series', js=NULL, event='click') {
+ec.util <- function(cmd='sf.series', ..., js=NULL, event='click') {
   
   opts <- list(...)
   
@@ -280,24 +272,25 @@ ec.util <- function( ..., cmd='sf.series', js=NULL, event='click') {
           paste("var map= chart.getModel().getComponent('leaflet').__map;", 
                 "map.fitBounds(",rng,");"))
     },
+    
     'sf.unzip'= {
       stopifnot('ec.util: expecting url of zipped shapefile'= !is.null(opts$url))
-      #stopifnot('ec.util: invalid zip url'= .valid.url(opts$url))
       if (!.valid.url(opts$url)) { out <- 'ERROR invalid zip url' }
       else {
         destfile <- tempfile('shapefile')
         download.file(opts$url, destfile, mode='wb') #, method='curl')
-        # get name only, use as folder name to unzip to
-        fldr <- sub(pattern = "(.*)\\..*$", replacement = "\\1", basename(opts$url))
-        unzip(destfile, exdir=fldr)  # new folder under getwd()
+        on.exit(unlink(destfile), add=TRUE)
+        
+        zfldr <- paste0(dirname(destfile),'/shape.unzipped')  # CRAN complains when getwd used
+        unzip(destfile, exdir=zfldr)  # new folder in temp folder
         # find name
         pat <- ifelse (is.null(opts$shp), '*.shp', paste0(opts$shp,'.shp'))
-        tmp <- list.files(path= fldr, pattern= pat)
+        tmp <- list.files(path= zfldr, pattern= pat, full.names=TRUE)
+        #on.exit(unlink(zfldr, recursive=TRUE), add=TRUE)   # cannot cleanup: file read later
         if (length(tmp)==0) 
-          #  stop(paste('ec.util:',pat,'file not found in folder',fldr), call. = FALSE)
-          out <- 'ERROR unzipped file not found'
+          out <- 'ERROR ec.util: unzipped file not found'
         else
-          out <- paste0(getwd(),'/',fldr,'/',tmp[1])
+          out <- tmp[1]
       }
     },
     
@@ -321,69 +314,17 @@ ec.util <- function( ..., cmd='sf.series', js=NULL, event='click') {
         data= if (is.null(opts$nid)) 
           lapply(1:nrow(geojson$features), list)
         else 
-          lapply(unlist(tmp$features$properties[opts$nid], use.names=FALSE), \(n){list(name=n)})
+          lapply(unlist(geojson$features$properties[opts$nid], use.names=FALSE), \(n){list(name=n)})
       ), opts)
     },
     
     'tabset'= {
       tabStyle <- NULL   # CRAN check fix
-      do.opties(c('tabStyle'), list("<style>
-/*	CSS for the main interaction */
-.tabset > input[type='radio'] {
- position: absolute;
- left: -200vw;
-}
-.tabset .tab-panel {	display: none; }
-.tabset > input:first-child:checked ~ .tab-panels > .tab-panel:first-child,
-.tabset > input:nth-child(3):checked ~ .tab-panels > .tab-panel:nth-child(2),
-.tabset > input:nth-child(5):checked ~ .tab-panels > .tab-panel:nth-child(3),
-.tabset > input:nth-child(7):checked ~ .tab-panels > .tab-panel:nth-child(4),
-.tabset > input:nth-child(9):checked ~ .tab-panels > .tab-panel:nth-child(5),
-.tabset > input:nth-child(11):checked ~ .tab-panels > .tab-panel:nth-child(6) {
-display: block;
-}
-/*	Styling */
-body {
- font: 16px/1.5em 'Overpass', 'Open Sans', Helvetica, sans-serif;
- color: #333; font-weight: 300;
-}
-.tabset > label {
- position: relative;
- display: inline-block;
- padding: 15px 15px 25px;
- border: 1px solid transparent;
- border-bottom: 0;
- cursor: pointer;
- font-weight: 600;
-}
-.tabset > label::after {
- content: '';
- position: absolute;
- left: 15px;
- bottom: 10px;
- width: 22px;
- height: 4px;
- background: #8d8d8d;
-}
-.tabset > label:hover,
-.tabset > input:focus + label { color: #06c; }
-.tabset > label:hover::after,
-.tabset > input:focus + label::after,
-.tabset > input:checked + label::after { background: #06c;}
-.tabset > input:checked + label {
- border-color: #ccc;
- border-bottom: 1px solid #fff;
- margin-bottom: -1px;
-}
-.tab-panel {
- padding: 10px 0; width: 100%;
- border-top: 1px solid #ccc;
-}
-body { padding: 10px; }
-.tabset { max-width: 65em; }
-</style>")
-      )
-      
+      do.opties(c('tabStyle'), list(strTabStyle3) )
+      if (!is.null(opts$width)) {
+        tabStyle <- sub('100%', opts$width, tabStyle)
+        opts$width <- NULL  # exclude to not mix with tabs
+      }
       tnames <- names(opts)
       isPipe <- FALSE
       if ((is.null(tnames) || length(tnames)==1) && 
@@ -400,31 +341,27 @@ body { padding: 10px; }
         isPipe <- TRUE
       }
       
-      tpans <- htmltools::tags$div(class='tab-panels')
-      tset <- htmltools::tags$div(class='tabset', id='ec_tabset')
+      tset <- htmltools::tags$div(class='tab-wrap', id='ec_tabset')
+      tpans <- htmltools::tags$div()
+      tpans <- list()
       cnt <- 1
       for(n in tnames) {
         tid <- paste0('tab', cnt)
-        tinp <- htmltools::tags$input(type='radio', id=tid,
-            name='tabso', `aria-controls`=n, onclick=paste0('trsz(',cnt-1,')') )
+        tinp <- htmltools::tags$input(type='radio', id=tid, name='tabGrp', class='tab', onclick=paste0('trsz(',cnt-1,')') )
         if (cnt==1) tinp <- htmltools::tagAppendAttributes(tinp, checked=1)
-        tset <- htmltools::tagAppendChildren(tset, 
-            tinp, htmltools::tags$label(`for`=tid, n))
+        tset <- htmltools::tagAppendChildren(tset, tinp, htmltools::tags$label(`for`=tid, n))
         cont <- unname(opts[n]) 
-        #cont[[1]]$width <- width
-        #cont[[1]]$height <- height
-        tpans <- htmltools::tagAppendChild(tpans, 
-            htmltools::tags$section(id=n, class='tab-panel', cont))
-        tout <- htmltools::tagAppendChild(tset, tpans)
+        tpans <- append(tpans, list(htmltools::tags$div(class='tab__content', cont)) )
         cnt <- cnt + 1
       }
-      out <- htmltools::tagList(htmltools::HTML(tabStyle), tout)
+      tset <- htmltools::tagAppendChildren(tset, tpans)
+      tpans <- htmltools::tagAppendChild(htmltools::tags$div(class='container'), tset) 
+      out <- htmltools::tagList(htmltools::HTML(tabStyle), tpans)
       
       # resize on tab click
       tmp <- "function trsz(i) { var ecs= document.getElementsByClassName('echarty'); 
          ecs[i].htmlwidget_data_init_result.resize(); }"
-      out <- htmltools::tagAppendChild(out,
-        htmltools::tags$script(tmp))
+      out <- htmltools::tagAppendChild(out, htmltools::tags$script(tmp))
       if (!isPipe)
         out <- htmltools::browsable(out)
     },
@@ -575,7 +512,8 @@ body { padding: 10px; }
 #' Make data lists from a data.frame
 #' 
 #' @param df Required chart data as **data.frame**. \cr
-#'     Except when format is _dendrogram_, then df is a **list**, result of \link[stats]{hclust} function.\cr
+#'  For format _dendrogram_ df is a **list**, result of \link[stats]{hclust} function.\cr
+#'  For format _flame_ df is an hierarchical **list** with name,value,children.\cr
 #' @param format Output list format\cr \itemize{
 #'  \item **dataset** = list to be used in \href{https://echarts.apache.org/en/option.html#dataset.source}{dataset} (default), or in \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} (without header). \cr
 #'  \item **values** = list for customized \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} \cr
@@ -584,6 +522,8 @@ body { padding: 10px; }
 #'  \item **treePC** = build series data for tree charts from parent/children data.frame
 #'  \item **treeTT** = build series data for tree charts from data.frame like Titanic.\cr
 #'  \item **boxplot** = build dataset and source lists, see Details
+#'  \item **borders** = build geoJson string from map_data region borders, see Details
+#'  \item **flame** = list of hierarchical series data to be presented by _renderItem_\cr
 #' }
 #' @param header for dataset, to include the column names or not, default TRUE. Set it to FALSE for \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data}.\cr
 #' @param ... optional parameters\cr
@@ -596,19 +536,26 @@ body { padding: 10px; }
 #' * _nasep_ = single character name separator for nested lists, see Examples. \cr
 #' Purpose is to facilitate conversion from _data.frame_ to nested named lists.\cr
 #' 
+#' Optional parameter for **flame**:\cr
+#' * _name_ = name of subtree to search for. \cr
+#' 
 #' @return A list for _dataset.source_, _series.data_ or other lists:\cr
 #'   For boxplot - a named list, see Details and Examples \cr
-#'   For dendrogram & treePC - a tree structure, see format in \href{https://echarts.apache.org/en/option.html#series-tree.data}{tree data}
+#'   For dendrogram, treePC, flame - a tree structure, see format in \href{https://echarts.apache.org/en/option.html#series-tree.data}{tree data}
 #'   
 #' @details 
 #' `format='boxplot'` requires the first two _df_ columns as: \cr
-#' \verb{     }column for the non-computational categorical axis\cr
-#' \verb{     }column with (numeric) data to compute the five boxplot values\cr
+#' \verb{     }\verb{     } column for the non-computational categorical axis\cr
+#' \verb{     }\verb{     } column with (numeric) data to compute the five boxplot values\cr
 #'  Additional grouping is supported on a column after the second. Groups will show in the legend, if enabled.\cr
 #'  Returns a `list(dataset, series, xAxis, yAxis)` to set params in [ec.init]. 
-#'  Make sure there is enough data for computation, 4+ values per boxplot.\cr
+#'  Make sure there is enough data for computation, 4+ values per boxplot.\cr\cr
 #' `format='treeTT'` expects data.frame _df_ columns _pathString,value,(optional itemStyle)_ for \link[data.tree]{FromDataFrameTable}.\cr
-#'  It will add column 'pct' with value percentage for each node. See example below.
+#'  It will add column 'pct' with value percentage for each node. See example below.\cr\cr
+#' `format='borders'` expects _df_ columns _long,lat,region,subregion_ as in \link[ggplot2]{map_data}.\cr
+#'  Result to be used as map in [ec.registerMap]. See borders code example in _examples.R_.\cr
+#'  This is a slow version for borders, another very fast one is offered as echarty extra, see website.\cr
+#'  
 #' @seealso some live \href{https://rpubs.com/echarty/data-models}{code samples}
 #' 
 #' @examples
@@ -660,6 +607,7 @@ body { padding: 10px; }
 #' @export
 ec.data <- function(df, format='dataset', header=FALSE, ...) {
   stopifnot('ec.data: expecting parameter df'= !missing(df))
+  
   if (format=='dendrogram') { 
     stopifnot('ec.data: df should be hclust for dendrogram'= inherits(df, 'hclust'))
     hc <- df
@@ -695,16 +643,79 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
     json <- data.tree::ToListExplicit(tmp, unname=TRUE)
     return(json$children)
     
-  } 
-  stopifnot('ec.data: df has to be data.frame'= inherits(df, 'data.frame'))
+  }
+  if (format=='flame') { 
+    stopifnot('ec.data: df should be a list for flame chart'= inherits(df, 'list'))
+    filter_json <- function(json, id) {
+      if (is.null(id)) return(json)
+      
+      recur <- function(item, id) {
+        if (item$name == id) return(item)
+        
+        if (!is.null(item$children)) {
+          for (child in item$children) {
+            temp <- recur(child, id)
+            if (!is.null(temp)) {
+              item$children <- list(temp)
+              #item$value <- temp$value  # change the parents' values
+              return(item)
+            }
+          }
+        }
+        return(NULL)
+      }
+      return(recur(json, id))
+    }
+    root_val <- 1000
+    recursion_json <- function(json_obj, id) {
+      data <- list()
+      filtered_json <- filter_json(json_obj, id)  # Note: R doesn't have structuredClone by default
+      recur <- function(item, start = 0, level = 0, wit = NULL) {
+        temp <- list(
+          name = item$name,
+          id = item$name,
+          value = c(
+            level,
+            start,
+            start + wit,
+            item$name,
+            round(wit / root_val * 100, 2),
+            item$value
+          )
+        )
+        data <<- c(data, list(temp))  # Use <<- to modify parent scope
+        
+        prev_start <- start
+        if (!is.null(item$children)) {
+          wit <- wit / length(item$children)
+        }
+        
+        if (!is.null(item$children)) {
+          for (child in item$children) {
+            recur(child, prev_start, level + 1, wit)
+            prev_start <- prev_start + wit
+          }
+        }
+      }
+      recur(filtered_json, 0, 0, root_val)
+      return(data)
+    }
+    
+    args <- list(...)
+    out <- recursion_json(df, args$name)
+    return(out)
+  }
+  
+  if (inherits(df, c('matrix', 'array'))) df <- as.data.frame(df)
+  stopifnot('ec.data: df has to be data.frame or matrix'= inherits(df, 'data.frame'))
   # save var for ec.clmn
-  .setColnm(colnames(df))
+  lenv$coNames <- colnames(df)
   
   if (format=='treePC') {
     # for sunburst,tree,treemap
     if (!all(unlist(lapply(as.list(df[,1:3]), class), use.names=FALSE) == 
              c('character','character','numeric')) )
-      stop('ec.data: df columns need to be in order (parents, children, value), only value is numeric', call. = FALSE)
+      stop('ec.data: df columns need to be in order (parents, children, value), only value is numeric', call.=FALSE)
     
     tryCatch({
       tmp <- data.tree::FromDataFrameNetwork(df)
@@ -752,10 +763,29 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
     tmp <- chNames(json)
     return(list(tmp))
   }
+  if (format=='borders') {
+    subregion <- region <- NULL   # remedy CRAN complaints
+    stopifnot('ec.data: expected columns not found'= all(c('lat','long','region','subregion') %in% colnames(df)) )
+    df <- df |> mutate(subregion= ifelse(is.na(subregion), region, subregion))
+    sreg <- df[1, 'subregion']
+    jsn <- paste0('{"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[\n',
+      '{"properties":{"name":"',trimws(sreg),'"}, "geometry":{"type":"Polygon","coordinates":[[')
+    apply(df, 1, function(row) {
+      if (sreg != row['subregion']) {  # start new one
+        sreg <<- row['subregion']
+        jsn <<- paste0(trimws(jsn,'right',whitespace=','), ']]}},\n{"properties":{"name":"',trimws(sreg),'","childNum":1},"geometry":{"type":"Polygon","coordinates":[[')
+      }
+      jsn <<- paste0(jsn, '[', trimws(row['long']), ',', row['lat'], '],')
+      NULL
+    })
+    jsn <- paste(trimws(jsn,'right',whitespace=','), ']]}} ]}')
+    #jsn <- structure(jsn, class='json')
+    return(jsn)   # use in ec.registerMap
+  }
   
-  rownames(df) <- NULL
-  n <- seq_along(df[[1]])       #  all df columns have the same length
-  tmp <- lapply(n, \(i) lapply(df, "[[", i))  # preserve column types
+  rownames(df) <- NULL          # TODO: check
+  n <- seq_along(df[[1]])       # all df columns have the same length
+  tmp <- lapply(n, \(i) lapply(df, "[[", i))  # rows to lists, preserve column types
   
   if (format=='boxplot') {
     args <- list(...)
@@ -945,12 +975,13 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
 #' 
 #' Helper function to display/format data column(s) by index or name
 #' 
-#' @param col A single column index(number) or column name(quoted string), \cr
-#'    or a \link[base]{sprintf} string template for multiple columns.\cr
-#'    NULL(default) for charts with single values like tree, pie.\cr
-#'    'json' to display tooltip with all available values to choose from.\cr 
-#'    'log' to write all values in the JS console (F12) for debugging.\cr
-#'    Can contain JS function starting with _'function('_ or _'(x) => \{'_.\cr
+#' @param col Can contain one of several types of values:\cr
+#' \verb{     } NULL(default) for charts with single values like tree, pie.\cr
+#' \verb{     } a single column index(number) or column name(quoted string) \cr
+#' \verb{     } a \link[base]{sprintf} string template for multiple columns\cr
+#' \verb{     } 'json' to display tooltip with all available values to choose from\cr 
+#' \verb{     } 'log' to write all values in the JS console (F12) for debugging.\cr
+#' \verb{     } a string containing a JS function starting with _'function('_ or _'(x) =>'_.\cr
 #' @param ... Comma separated column indexes or names, only when \emph{col} is \emph{sprintf}. This allows formatting of multiple columns, as for a tooltip.\cr
 #' @param scale A positive number, multiplier for numeric columns. When scale is 0, all numeric values are rounded.
 #' @return A JavaScript code string (usually a function) marked as executable, see \link[htmlwidgets]{JS}.
@@ -1000,6 +1031,7 @@ ec.clmn <- function(col=NULL, ..., scale=1) {
     else scl <- paste0('return (parseFloat(c)*',scale,');') 
   }
   args <- list(...)
+
   ret <- paste("pos=[]; c= String(typeof x=='object' ? x.value : x);", scl)
   
   if (is.null(col)) {}   # for pie,sunburst
@@ -1032,7 +1064,7 @@ return template.replace(/%@|%L@|%LR@|%R@|%R2@|%M@/g, (m) => {
 	if (all(is.na(tmp))) {   
 		# multiple column names (non-numeric strings)
 		# to find position in colnames
-	  tmp <- .getColnm()
+	  tmp <- lenv$coNames 
 		stopifnot("ec.clmn: colnames missing.
     Use ec.clmn after ec.data and/or inside ec.init(df).
     Otherwise use column indexes instead of names."= !is.null(tmp))
@@ -1111,12 +1143,12 @@ if (vv.length > 0)
 #' @details This function could be chained to _ec.init_ or used with a _data.frame_\cr
 #' @examples
 #' iris |> dplyr::group_by(Species) |>    # chained
-#' ec.init(ctype= 'parallel', series.param= list(lineStyle= list(width=3))) |> 
+#' ec.init(series.param= list(type= 'parallel', lineStyle= list(width=3))) |> 
 #' ec.paxis(cols= c('Petal.Length','Petal.Width','Sepal.Width'))
 #' 
-#' mtcars |> ec.init(ctype= 'parallel', 
+#' mtcars |> ec.init( 
 #'    parallelAxis= ec.paxis(mtcars, cols= c('gear','cyl','hp','carb'), nameRotate= 45),
-#'    series.param= list(smooth= TRUE)
+#'    series.param= list(type= 'parallel', smooth= TRUE)
 #' )
 #' 
 #' @export 
@@ -1147,7 +1179,7 @@ ec.paxis <- function(dfwt=NULL, cols=NULL, minmax=TRUE, ...) {
     idf <- as.data.frame(apply(idf, 2, unlist, simplify=FALSE))
   }
   if (!is.null(cols)) {
-    stopifnot('ec.paxis: some cols not found'= all(cols %in% coln))
+    stopifnot('ec.paxis: some columns not found'= all(cols %in% coln))
     cfilter <- match(cols, coln)
   }
   for(i in cfilter) {
@@ -1185,13 +1217,13 @@ ec.paxis <- function(dfwt=NULL, cols=NULL, minmax=TRUE, ...) {
 #' @details Just a few built-in themes are included in folder \code{inst/themes}.\cr
 #' Their names are dark, gray, jazz, dark-mushroom and macarons.\cr
 #' The entire ECharts theme collection could be found \href{https://github.com/apache/echarts/tree/master/theme}{here} and files copied if needed.\cr
-#' To create custom themes or view predefined ones, visit \href{https://echarts.apache.org/en/theme-builder.html}{this site}.
+#' To create custom themes or view predefined ones, visit \href{https://echarts.apache.org/en/theme-builder.html}{theme-builder}.\cr
+#' See also alternative _registerTheme_ in [ec.init].
 #'
 #' @examples
 #' mtcars |> ec.init() |> ec.theme('dark-mushroom')
 #' cars |> ec.init() |> ec.theme('mine', code=
-#'   '{"color": ["green","#eeaa33"], 
-#'     "backgroundColor": "lemonchiffon"}')
+#'   '{"color": ["green","#eeaa33"], "backgroundColor": "lemonchiffon"}')
 #' 
 #' @export
 ec.theme <- function (wt, name='custom', code= NULL) 
@@ -1220,9 +1252,9 @@ ec.theme <- function (wt, name='custom', code= NULL)
 #' 
 #' @param wt An \code{echarty} widget as returned by [ec.init]
 #' @param target type of resulting value: \cr
-#' \verb{     }'opts' - the htmlwidget _options_ as JSON (default)\cr
-#' \verb{     }'full' - the _entire_ htmlwidget as JSON\cr
-#' \verb{     }'data' - info about chart's embedded data (char vector)
+#' \verb{     }\verb{     } 'opts' - the htmlwidget _options_ as JSON (default)\cr
+#' \verb{     }\verb{     } 'full' - the _entire_ htmlwidget as JSON\cr
+#' \verb{     }\verb{     } 'data' - info about chart's embedded data (char vector)
 #' @param ... Additional attributes to pass to \link[jsonlite]{toJSON}\cr
 #' 'file' - optional file name to save to when target='full'\cr
 #' @return A JSON string, except when \code{target} is 'data' - then
@@ -1299,10 +1331,10 @@ ec.inspect <- function(wt, target='opts', ...) {
 #' Convert JSON string or file to chart
 #' 
 #' @param txt Could be one of the following:\cr
-#' \verb{     }class _url_, like \code{url('https://serv.us/cars.txt')}\cr
-#' \verb{     }class _file_, like \code{file('c:/temp/cars.txt','rb')}\cr
-#' \verb{     }class _json_, like \code{ec.inspect(p)}, for options or full\cr
-#' \verb{     }class _character_, JSON string with options only, see example below\cr
+#' \verb{     } class _url_, like \code{url('https://serv.us/cars.txt')}\cr
+#' \verb{     } class _file_, like \code{file('c:/temp/cars.txt','rb')}\cr
+#' \verb{     } class _json_, like \code{ec.inspect(p)}, for options or full\cr
+#' \verb{     } class _character_, JSON string with options only, see example below\cr
 #' @param ... Any attributes to pass to internal [ec.init] when _txt_ is options only
 #' @return An _echarty_ widget.
 #' 
@@ -1360,6 +1392,204 @@ ec.fromJson <- function(txt, ...) {
 }
 
 
+#' Register a geoJson map
+#' 
+#' Read geoJSON file to be used in a map chart\cr
+#' **Deprecated** since v.1.7.0, use ec.init(registerMap=...) instead.
+#' 
+#' @param wt An \code{echarty} widget as returned by [ec.init].\cr
+#' @param name Name of map.\cr
+#' @param data A string starting with _http_ or _file_. URL strings ending with _.svg_ are assumed to be SVG map files.\cr
+#' Could also be a valid geoJSON or SVG text string. SVG strings start with either _<?xml_ or _<svg_.\cr
+#' @return An _echarty_ widget.
+#' 
+#' @details This command replaces the manual setting through _p$x$registerMap_.\cr
+#' It should always be piped after [ec.init].\cr
+#' There should be one map series with attribute 'map' matching the name parameter.\cr
+#' 
+#' @examples
+#' data.frame(name= c('Texas', 'California'), value= c(111, 222)) |> 
+#' ec.init( color= c('lightgray'), visualMap= list(min=111),
+#'   series.param= list(type= 'map', map= 'usa')
+#' ) |> 
+#' ec.registerMap('usa', 'https://echarts.apache.org/examples/data/asset/geo/USA.json')
+#' 
+#' @export
+ec.registerMap <- function(wt= NULL, name= 'loadedMapName', data= NULL) {
+	stopifnot('ec.registerMap: wt should be echarty object'= inherits(wt, 'echarty'))
+  message('ec.registerMap() is deprecated. Use ec.init(registerMap=...) instead.')
+  
+	# check geo/series map name
+  gmap <- 'geo' %in% names(wt$x$opts)
+  if (gmap) gmap <- if ('map' %in% names(wt$x$opts$geo)) wt$x$opts$geo$map==name else FALSE
+	smap <- wt$x$opts$series[sapply(wt$x$opts$series, \(x) {if (!is.null(x$map)) x$map==name else FALSE})]
+	if (!gmap && length(smap)!=1) {
+		wt$x$opts <- list()
+		wt$x$opts$title <- list(text= paste0('ec.registerMap:\n missing a series/geo with "map=`',name,'`"'))
+		return(wt)
+	}
+	
+	if (!any(startsWith(data, c('http','file')))) {   # text
+		if (any(startsWith(data, c('<?xml','<svg')))) {
+			.svg <- data
+		}
+		else {
+			stopifnot('ec.registerMap: data text is invalid json'= jsonlite::validate(data))
+			#geoJson <- data  # jsonlite::read_json(path='', txt=data)
+			.geoJson <- structure(data, class='json')
+
+		}
+	}
+	else {	# file
+		if (!.valid.url(data)) {
+			wt$x$opts <- list()
+			wt$x$opts$title <- list(text= paste('ec.registerMap: data file not found \n',data))
+			return(wt)
+		}
+		if (endsWith(data, '.svg'))
+			.svg <- data |> readLines(encoding='UTF-8') |> paste0(collapse="")
+		else
+	  	.geoJson <- jsonlite::read_json(data)
+	}
+	out <- list(mapName= name, opt=list())
+	if (exists('.geoJson')) out$opt$geoJSON <- .geoJson
+	else if (exists('.svg')) out$opt$svg <- .svg
+	wt$x$registerMap <- list(out)
+	wt
+}
+
+
+
+strTabStyle3 <- "<style>
+.tab-wrap {
+  transition: 0.3s box-shadow ease;
+  border-radius: 6px;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  position: relative;
+  list-style: none;
+  background-color: #fff;
+  margin: 40px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+.tab-wrap:hover {
+  box-shadow: 0 12px 23px rgba(0, 0, 0, 0.23), 0 10px 10px rgba(0, 0, 0, 0.19);
+}
+
+.tab {
+  display: none;
+}
+.tab:checked:nth-of-type(1) ~ .tab__content:nth-of-type(1) {
+  opacity: 1;
+  transition: 0.5s opacity ease-in, 0.8s transform ease;
+  position: relative;
+  top: 0;
+  z-index: 100;
+  transform: translateY(0px);
+  text-shadow: 0 0 0;
+}
+.tab:checked:nth-of-type(2) ~ .tab__content:nth-of-type(2) {
+  opacity: 1;
+  transition: 0.5s opacity ease-in, 0.8s transform ease;
+  position: relative;
+  top: 0;
+  z-index: 100;
+  transform: translateY(0px);
+  text-shadow: 0 0 0;
+}
+.tab:checked:nth-of-type(3) ~ .tab__content:nth-of-type(3) {
+  opacity: 1;
+  transition: 0.5s opacity ease-in, 0.8s transform ease;
+  position: relative;
+  top: 0;
+  z-index: 100;
+  transform: translateY(0px);
+  text-shadow: 0 0 0;
+}
+.tab:checked:nth-of-type(4) ~ .tab__content:nth-of-type(4) {
+  opacity: 1;
+  transition: 0.5s opacity ease-in, 0.8s transform ease;
+  position: relative;
+  top: 0;
+  z-index: 100;
+  transform: translateY(0px);
+  text-shadow: 0 0 0;
+}
+.tab:checked:nth-of-type(5) ~ .tab__content:nth-of-type(5) {
+  opacity: 1;
+  transition: 0.5s opacity ease-in, 0.8s transform ease;
+  position: relative;
+  top: 0;
+  z-index: 100;
+  transform: translateY(0px);
+  text-shadow: 0 0 0;
+}  
+
+.tab:first-of-type:not(:last-of-type) + label {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.tab:not(:first-of-type):not(:last-of-type) + label {
+  border-radius: 0;
+}
+.tab:last-of-type:not(:first-of-type) + label {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.tab:checked + label {
+  background-color: #fff;
+  box-shadow: 0 -1px 0 #fff inset;
+  cursor: default;
+  text-decoration: overline gray;
+  text-decoration-thickness: 0.3rem;
+}
+.tab:checked + label:hover {
+  box-shadow: 0 -1px 0 #fff inset;
+  background-color: #fff;
+}
+.tab + label {
+  border-style: solid; border-width: 1px 1px 0 1px; border-color: #ccc;
+  box-shadow: 0 -1px 0 #eee inset;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  display: block;
+  text-decoration: none;
+  color: #333;
+  flex-grow: 3;
+  text-align: center;
+  background-color: Gainsboro;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  text-align: center;
+  transition: 0.3s background-color ease, 0.3s box-shadow ease;
+  height: 50px;
+  box-sizing: border-box;
+  padding: 15px;
+}
+.tab + label:hover {
+  background-color: BurlyWood;
+  box-shadow: 0 1px 0 #f4f4f4 inset;
+}
+.tab__content {
+  padding: 10px 25px;
+  background-color: transparent;
+  position: absolute;
+  width: 100%;
+  z-index: -1;
+  opacity: 0;
+  left: 0;
+  transform: translateY(-3px);
+  border-radius: 6px;
+}
+.container {
+  margin: 0 auto;
+  display: block;
+  max-width: 800px;
+}
+</style>"
 
 #' ------------- Licence -----------------
 #'

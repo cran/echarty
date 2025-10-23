@@ -8,7 +8,8 @@ ec.data(df, format = "dataset", header = FALSE, ...)
 }
 \arguments{
 \item{df}{Required chart data as \strong{data.frame}. \cr
-Except when format is \emph{dendrogram}, then df is a \strong{list}, result of \link[stats]{hclust} function.\cr}
+For format \emph{dendrogram} df is a \strong{list}, result of \link[stats]{hclust} function.\cr
+For format \emph{flame} df is an hierarchical \strong{list} with name,value,children.\cr}
 
 \item{format}{Output list format\cr \itemize{
 \item \strong{dataset} = list to be used in \href{https://echarts.apache.org/en/option.html#dataset.source}{dataset} (default), or in \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} (without header). \cr
@@ -18,6 +19,8 @@ Except when format is \emph{dendrogram}, then df is a \strong{list}, result of \
 \item \strong{treePC} = build series data for tree charts from parent/children data.frame
 \item \strong{treeTT} = build series data for tree charts from data.frame like Titanic.\cr
 \item \strong{boxplot} = build dataset and source lists, see Details
+\item \strong{borders} = build geoJson string from map_data region borders, see Details
+\item \strong{flame} = list of hierarchical series data to be presented by \emph{renderItem}\cr
 }}
 
 \item{header}{for dataset, to include the column names or not, default TRUE. Set it to FALSE for \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data}.\cr}
@@ -34,25 +37,33 @@ Optional parameter for \strong{names}:\cr
 \itemize{
 \item \emph{nasep} = single character name separator for nested lists, see Examples. \cr
 Purpose is to facilitate conversion from \emph{data.frame} to nested named lists.\cr
+}
+
+Optional parameter for \strong{flame}:\cr
+\itemize{
+\item \emph{name} = name of subtree to search for. \cr
 }}
 }
 \value{
 A list for \emph{dataset.source}, \emph{series.data} or other lists:\cr
 For boxplot - a named list, see Details and Examples \cr
-For dendrogram & treePC - a tree structure, see format in \href{https://echarts.apache.org/en/option.html#series-tree.data}{tree data}
+For dendrogram, treePC, flame - a tree structure, see format in \href{https://echarts.apache.org/en/option.html#series-tree.data}{tree data}
 }
 \description{
 Make data lists from a data.frame
 }
 \details{
 \code{format='boxplot'} requires the first two \emph{df} columns as: \cr
-\verb{     }column for the non-computational categorical axis\cr
-\verb{     }column with (numeric) data to compute the five boxplot values\cr
+\verb{     }\verb{     } column for the non-computational categorical axis\cr
+\verb{     }\verb{     } column with (numeric) data to compute the five boxplot values\cr
 Additional grouping is supported on a column after the second. Groups will show in the legend, if enabled.\cr
 Returns a \code{list(dataset, series, xAxis, yAxis)} to set params in \link{ec.init}.
-Make sure there is enough data for computation, 4+ values per boxplot.\cr
+Make sure there is enough data for computation, 4+ values per boxplot.\cr\cr
 \code{format='treeTT'} expects data.frame \emph{df} columns \emph{pathString,value,(optional itemStyle)} for \link[data.tree]{FromDataFrameTable}.\cr
-It will add column 'pct' with value percentage for each node. See example below.
+It will add column 'pct' with value percentage for each node. See example below.\cr\cr
+\code{format='borders'} expects \emph{df} columns \emph{long,lat,region,subregion} as in \link[ggplot2]{map_data}.\cr
+Result to be used as map in \link{ec.registerMap}. See borders code example in \emph{examples.R}.\cr
+This is a slow version for borders, another very fast one is offered as echarty extra, see website.\cr
 }
 \examples{
 library(dplyr)

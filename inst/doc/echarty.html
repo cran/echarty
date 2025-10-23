@@ -48,8 +48,9 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -60,7 +61,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -366,51 +367,65 @@ commands have three prefixes to help with auto-completion:</p>
 </div>
 <div id="events" class="section level2">
 <h2>Events</h2>
-<p>For event handling in Shiny see sample code in <a href="https://github.com/helgasoft/echarty/blob/main/demo/eshiny.R">eshiny.R</a>,
-run as <code>demo(eshiny)</code>.<br />
-Echarty has three built-in event callbacks - <em>click</em>,
-<em>mouseover</em>, <em>mouseout</em>. All other ECharts <a href="https://echarts.apache.org/en/api.html#events">events</a> could be
-initialized through <code>p$x$capture</code>. Another option is to use
-<code>p$x$on</code> with JavaScript handlers, see code in <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">examples</a>.</p>
+<p>Event handling in <strong>Shiny</strong> is done through
+callbacks.<br> See considerable sample code in <a href="https://github.com/helgasoft/echarty/blob/main/demo/eshiny.R">eshiny.R</a>,
+run as <code>demo(eshiny)</code>.<br> There are three built-in event
+callbacks - <em>click</em>, <em>mouseover</em>, <em>mouseout</em>. All
+other ECharts <a href="https://echarts.apache.org/en/api.html#events">events</a> could be
+initialized through <code>ec.init(capture=...)</code>. <br> For event
+handling in R (without Shiny) use parameter <code>ec.init(on=...)</code>
+which expects JavaScript handlers. Search for ‘event’ in <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">code
+examples</a>.</p>
 </div>
-<div id="widget-x-parameters" class="section level2">
-<h2>Widget <strong>x</strong> parameters</h2>
-<p>These are <em>htmlwidget</em> and <em>ECharts</em> initialization
-parameters supported by echarty. There are code samples for most of them
-in <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">examples</a>:</p>
+<div id="echarts-initialization-parameters" class="section level2">
+<h2>ECharts initialization parameters</h2>
+<p>Chart initialization is performed by the <em>echarty::ec.init()</em>
+command.<br> Here is full list of <em>ec.init</em> optional
+parameters:</p>
 <ul>
-<li>capture = event name(s), to monitor events, usually in Shiny</li>
-<li>on = define JavaScript code for event handling, see <a href="https://echarts.apache.org/en/api.html#echartsInstance.on">ECharts</a></li>
-<li>registerMap = define a map from a geoJSON file, see <a href="https://echarts.apache.org/en/api.html#echartsInstance.registerMap">ECharts</a></li>
-<li>group = group-name of a chart, see <a href="https://echarts.apache.org/en/api.html#echartsInstance.group">ECharts</a></li>
-<li>connect = command to connect charts with same group-name, see <a href="https://echarts.apache.org/en/api.html#echarts.connect">ECharts</a></li>
-<li>locale = EN(default) or ZH, set from <em>locale</em> parameter of
-<em>ec.init</em>, see <a href="https://echarts.apache.org/en/api.html#echarts.init">ECharts</a>.</li>
-<li>renderer = <em>canvas</em>(default) or <em>svg</em>, set from
-<em>renderer</em> in <em>ec.init</em>, see <a href="https://echarts.apache.org/en/api.html#echarts.init">ECharts</a>.</li>
-<li>jcode = custom JavaScript code to execute, set from <em>js</em>
-parameter of <em>ec.init</em></li>
+<li><em>ask, js, elementId, ctype, xtKey, dbg</em> are specific to
+<em>echarty</em><br></li>
+<li><em>theme, iniOpts, on, off, capture, group</em> belong to the
+ECharts <a href="https://echarts.apache.org/en/api.html#echartsInstance">chart
+instance</a> object.<br></li>
+<li><em>connect, disconnect, registerMap, registerTheme, registerLocale,
+registerCustomSeries</em> are commands of the global <a href="https://echarts.apache.org/en/api.html#echarts">ECharts
+object</a>.</li>
 </ul>
+<p>There are R <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">code
+examples</a> for some of these parameters.</p>
 </div>
 <div id="r-vs-javascript-numbering" class="section level2">
 <h2>R vs Javascript numbering</h2>
-<p>R language counting starts from 1.<br />
-Javascript (JS) counting starts from 0.<br />
-<em>ec.init</em> supports R-counting of indexes (ex. encode) and
-dimension (ex. visualMap).<br />
-<em>ec.upd</em> requires indexes and dimensions to be set with
-JS-counting.</p>
+<p>R language counting starts from 1.<br> Javascript (JS) counting
+starts from 0.<br> <em>ec.init</em> supports R-counting of indexes (ex.
+encode) and dimension (ex. visualMap).<br> All other contexts like
+<em>ec.upd</em> or <em>ecs.proxy</em> require JS-counting of indexes and
+dimensions.</p>
 </div>
 <div id="javascript-built-in-functions" class="section level2">
 <h2>Javascript built-in functions</h2>
-<p>To allow access to charts from JS.<br />
-<em>ec_chart(id)</em> - get the chart object by id (former
-get_e_charts)<br />
-<em>ec_option(id)</em> - get the chart’s option object by id (former
-get_e_charts_opt)<br />
-Parameter <em>id</em> could be the internal variable <em>echwid</em>, or
-the value set through <em>ec.init</em> parameter <em>elementId</em>. See
-demo code in <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">examples</a></p>
+<p>To allow access to charts from JS.<br> <strong>ec_chart(id)</strong>
+- get the chart object by id <br> <strong>ec_option(id)</strong> - get
+the chart’s option object by id <br> Parameter <em>id</em> could be the
+internal JS variable <em>echwid</em>, or the value set through
+<em>ec.init</em> parameter <em>elementId</em>. See <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">code
+examples</a>.</p>
+</div>
+<div id="column-to-style-binding-with-encode" class="section level2">
+<h2>Column-to-style binding with encode</h2>
+<p>ECharts <a href="https://echarts.apache.org/en/option.html#series-bar.encode">series
+encode</a> enables binding axes and tooltip to data columns. Echarty
+enhances this method for all <a href="https://echarts.apache.org/en/option.html#series-bar.data">series
+data</a> parameters like itemStyle,labels,emphasis,etc. The bindings are
+set through <code>series$encode$data</code>. For instance<br>
+<code>encode= list(data= list(value= c(&#39;xc&#39;,&#39;yc&#39;), itemStyle= list(opacity= &#39;oc&#39;)))</code><br>
+would match columns <em>xc,yc,oc</em> to each item’s value and opacity.
+The result is a new <code>series$data</code> added to the series. It
+permits to finely customize chart elements directly from data.<br>
+Echarty has also an alternative tool, style-named columns with
+<code>ec.data(..nasep)</code>, but <code>encode$data</code> offers more
+flexibility. It is not compatible with <em>timeline</em> however.</p>
 </div>
 <div id="code-examples" class="section level2">
 <h2>Code examples</h2>
@@ -418,7 +433,7 @@ demo code in <a href="https://github.com/helgasoft/echarty/blob/main/demo/exampl
 <strong>locations</strong>:</p>
 <ul>
 <li>website <a href="https://helgasoft.github.io/echarty/articles/gallery.html">gallery</a></li>
-<li><a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">demo
+<li>collection of <a href="https://github.com/helgasoft/echarty/blob/main/demo/examples.R">code
 examples</a></li>
 <li>Shiny code is in <a href="https://github.com/helgasoft/echarty/blob/main/demo/eshiny.R">eshiny.R</a>,
 run with <code>demo(eshiny)</code></li>
@@ -433,7 +448,7 @@ tests</a></li>
 </div>
 <div id="global-options" class="section level2">
 <h2>Global Options</h2>
-<p>Options are set with R command <a href="https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/options">options</a>.<br />
+<p>Options are set with R command <a href="https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/options">options</a>.
 Echarty uses the following options:</p>
 <ul>
 <li>echarty.theme = name of theme file, without extension, from folder

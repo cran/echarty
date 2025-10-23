@@ -40,57 +40,50 @@ commands have three prefixes to help with auto-completion:
 
 ## Events
 
-For event handling in Shiny see sample code in
+Event handling in **Shiny** is done through callbacks.<br>
+See considerable sample code in
 [eshiny.R](https://github.com/helgasoft/echarty/blob/main/demo/eshiny.R),
-run as `demo(eshiny)`.\
-Echarty has three built-in event callbacks - *click*, *mouseover*,
-*mouseout*. All other ECharts
-[events](https://echarts.apache.org/en/api.html#events) could be
-initialized through `p$x$capture`. Another option is to use `p$x$on`
-with JavaScript handlers, see code in
-[examples](https://github.com/helgasoft/echarty/blob/main/demo/examples.R).
+run as `demo(eshiny)`.<br>
+There are three built-in event callbacks - *click*, *mouseover*,
+*mouseout*. All other ECharts [events](https://echarts.apache.org/en/api.html#events) could be
+initialized through `ec.init(capture=...)`. <br>
+For event handling in R (without Shiny) use parameter `ec.init(on=...)` which expects JavaScript handlers. Search for 'event' in [code
+  examples](https://github.com/helgasoft/echarty/blob/main/demo/examples.R).
 
-## Widget **x** parameters
+## ECharts initialization parameters
 
-These are *htmlwidget* and *ECharts* initialization parameters supported
-by echarty. There are code samples for most of them in
-[examples](https://github.com/helgasoft/echarty/blob/main/demo/examples.R):
+Chart initialization is performed by the _echarty::ec.init()_ command.<br>
+Here is full list of _ec.init_ optional parameters:
 
-- capture = event name(s), to monitor events, usually in Shiny
-- on = define JavaScript code for event handling, see
-    [ECharts](https://echarts.apache.org/en/api.html#echartsInstance.on)
-- registerMap = define a map from a geoJSON file, see
-    [ECharts](https://echarts.apache.org/en/api.html#echartsInstance.registerMap)
-- group = group-name of a chart, see
-    [ECharts](https://echarts.apache.org/en/api.html#echartsInstance.group)
-- connect = command to connect charts with same group-name, see
-    [ECharts](https://echarts.apache.org/en/api.html#echarts.connect)
-- locale = EN(default) or ZH, set from *locale* parameter of
-    *ec.init*, see
-    [ECharts](https://echarts.apache.org/en/api.html#echarts.init).
-- renderer = *canvas*(default) or *svg*, set from *renderer* in
-    *ec.init*, see
-    [ECharts](https://echarts.apache.org/en/api.html#echarts.init).
-- jcode = custom JavaScript code to execute, set from *js* parameter
-    of *ec.init*
+- _ask, js, elementId, ctype, xtKey, dbg_ are specific to _echarty_<br>
+- _theme, iniOpts, on, off, capture, group_ belong to the ECharts [chart instance](https://echarts.apache.org/en/api.html#echartsInstance) object.<br>
+- _connect, disconnect, registerMap, registerTheme, registerLocale, registerCustomSeries_ are commands of the global [ECharts object](https://echarts.apache.org/en/api.html#echarts).
+
+There are R [code
+  examples](https://github.com/helgasoft/echarty/blob/main/demo/examples.R) for some of these parameters.
 
 ## R vs Javascript numbering
 
-R language counting starts from 1.\
-Javascript (JS) counting starts from 0.\
+R language counting starts from 1.<br>
+Javascript (JS) counting starts from 0.<br>
 *ec.init* supports R-counting of indexes (ex. encode) and dimension (ex.
-visualMap).\
-*ec.upd* requires indexes and dimensions to be set with JS-counting.
+visualMap).<br>
+All other contexts like *ec.upd* or *ecs.proxy* require JS-counting of indexes and dimensions. 
 
 ## Javascript built-in functions
 
-To allow access to charts from JS.\
-*ec_chart(id)* - get the chart object by id (former get_e_charts)\
-*ec_option(id)* - get the chart's option object by id (former
-get_e_charts_opt)\
-Parameter _id_ could be the internal variable *echwid*, or the value set
-through *ec.init* parameter *elementId*. See demo code in
-[examples](https://github.com/helgasoft/echarty/blob/main/demo/examples.R)
+To allow access to charts from JS.<br>
+**ec_chart(id)** - get the chart object by id <br>
+**ec_option(id)** - get the chart's option object by id <br>
+Parameter _id_ could be the internal JS variable *echwid*, or the value set
+through *ec.init* parameter *elementId*. See [code
+  examples](https://github.com/helgasoft/echarty/blob/main/demo/examples.R).
+
+## Column-to-style binding with encode
+
+ECharts [series encode](https://echarts.apache.org/en/option.html#series-bar.encode) enables binding axes and tooltip to data columns. Echarty enhances this method for all [series data](https://echarts.apache.org/en/option.html#series-bar.data) parameters like itemStyle,labels,emphasis,etc. The bindings are set through `series$encode$data`. For instance<br>
+`encode= list(data= list(value= c('xc','yc'), itemStyle= list(opacity= 'oc')))`<br> would match columns _xc,yc,oc_ to each item's value and opacity. The result is a new `series$data` added to the series. It permits to finely customize chart elements directly from data.<br>
+Echarty has also an alternative tool, style-named columns with `ec.data(..nasep)`, but `encode$data` offers more flexibility. It is not compatible with _timeline_ however.
 
 ## Code examples
 
@@ -98,7 +91,7 @@ Here is the complete list of sample code **locations**:
 
 - website
   [gallery](https://helgasoft.github.io/echarty/articles/gallery.html)
-- [demo
+- collection of [code
   examples](https://github.com/helgasoft/echarty/blob/main/demo/examples.R)
 - Shiny code is in
   [eshiny.R](https://github.com/helgasoft/echarty/blob/main/demo/eshiny.R),
@@ -114,7 +107,7 @@ Here is the complete list of sample code **locations**:
 ## Global Options
 
 Options are set with R command
-[options](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/options).\
+[options](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/options). 
 Echarty uses the following options:
 
 - echarty.theme = name of theme file, without extension, from folder
