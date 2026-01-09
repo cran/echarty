@@ -8,13 +8,14 @@
 NULL
 
 lenv <- new.env(parent = emptyenv())
+lenv$coNames <- '' 
 # assign('aa', 11, envir=.ecv.colnames); get('aa', envir=.ecv.colnames)
-noAxisXY <- c('radar','parallel','themeRiver','map','gauge','pie','funnel','polar',  
+noAxisXY <- c('radar','parallel','themeRiver','map','gauge','pie','funnel','polar','chord',  
     'sunburst','tree','treemap','sankey','lines', 'liquidFill','wordCloud') # series
 noCoord <- c('polar','radar','singleAxis','parallelAxis','calendar')
 # using list(show=TRUE) or list(list()) is to create empty object{} in JS
 
-#' Initialize command
+#' Initialize a chart
 #'
 #' Required to build a chart. In most cases this will be the only command necessary.
 #'
@@ -23,11 +24,10 @@ noCoord <- c('polar','radar','singleAxis','parallelAxis','calendar')
 #'   Best practice is to have the grouping column placed last. Grouping column cannot be used as axis.\cr
 #'   Timeline requires a _grouped data.frame_ to build its \href{https://echarts.apache.org/en/option.html#options}{options}.\cr
 #'   If grouping is on multiple columns, only the first one is used to determine settings.
-#  ' REM @param ctype Chart type, default is 'scatter'. Could be set in _series.param_ instead.
 #' @param preset Boolean (default TRUE). Build preset attributes like dataset, series, xAxis, yAxis, etc.\cr
 #'   When preset is FALSE, these attributes need to be set explicitly.\cr
 #' @param series.param  Additional attributes for single preset series, default is NULL.\cr
-#'  Defines a **single** series for both non-timeline and timeline charts. \cr
+#'  Defines a **single** series for both non-timeline and timeline charts. Default type is 'scatter'. \cr
 #'  **Multiple** series need to be defined directly with _series=list(list(type=...),list(type=...))_ or added with [ec.upd].
 #' @param tl.series Deprecated, use _timeline_ and _series.param_ instead.\cr
 #' @param ...  Optional widget attributes. See Details. \cr
@@ -152,7 +152,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
   opt1 <- list(...)  
   lenv$coNames <- '' 
   # treacherous R does "partial matching of argument names" (like a bug): 
-  #   if 'series.param' is before ... and 'series' is added, the latter is ignored!
+  #   if 'series.param' is before '...' and 'series' is added, the latter is ignored!
   elementId <- opt1$elementId;  js <- opt1$js
   ask <- if (is.null(opt1$ask)) FALSE else opt1$ask
   ctype <- if (is.null(opt1$ctype)) 'scatter' else opt1$ctype
@@ -276,6 +276,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
   if (!is.null(df)) {
     stopifnot('ec.init: df should be data.frame or SharedData'= 
               inherits(df, c("SharedData", "data.frame")))
+    
     ct.key <- ct.group <- ct.dfKey <- NULL
     if (requireNamespace("crosstalk", quietly= TRUE)) {
       if (crosstalk::is.SharedData(df)) {
@@ -292,9 +293,11 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
       crosstalk_key = ct.key,
       crosstalk_group = ct.group
     )
-    colun <- ''
-    if (!is.null(df)) colun <- colnames(df)   # must execute before first ec.clmn
-    lenv$coNames <- colun
+    stopifnot('ec.init: df is empty'= length(colnames(df)) > 0)
+    # silently auto-add extra column for some charts and for colX/colY
+    if (length(colnames(df)) == 1 && !is.grouped_df(df)) 
+      df <- df |> mutate(duplicate= 1:nrow(df))   
+    lenv$coNames <- colnames(df)   # must execute before first ec.clmn
     # if data.frame given, build dataset regardless of 'preset' or 'dataset'
  
     # column-to-style with encode, replaces dataset column names, then creates series.data
@@ -305,16 +308,18 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
         if ('value' %in% colnames(df)) message("Warning: encode$data$value, but df has already column 'value'")
         vv <- series.param$encode$data$value
         stopifnot('encode$data$value is not a vector of column names'= is.vector(vv))
-        stopifnot('encode$data$value column(s) not found in df'= vv %in% colnames(df))
+        stopifnot('encode$data$value column names not found in df'= vv %in% colnames(df))
         # convert factor to char if any
         ft <- na.omit(sapply(vv, \(x) { if (is.factor(df[[x]])) x else NA}))
         if (length(ft)>0)
           lapply(ft, \(x) { df[[x]] <- as.character(df[[x]]) })
           #df <- df |> mutate(across(all_of(ft), as.character))   # error on group_by
         # add new DB col 'value'
-        df$value <- list(list('',''))
+        df$value <- list(list(rep('', length(vv))))
         for(i in 1:nrow(df)) {
-          df[i,]$value <- list(list(unlist(df[i,vv[1]], use.names=F), unlist(df[i,vv[2]], use.names=F)))
+          tmp <- list()
+          for(k in seq_along(vv)) tmp <- c(tmp, unlist(df[i,vv[k]], use.names=F))
+          df[i,]$value <- list(tmp) 
         }
         # TODO: remove vv columns from df or not?
         sedval <- series.param$encode$data$value  # save for axes
@@ -485,7 +490,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
   if (!is.null(series.param)) {
     x$opts$series <- .merlis(x$opts$series, series.param)
   }
-  axad <- 1;
+  axad <- 1; isSname <- FALSE
   x$opts$series <- lapply(x$opts$series, function(ss) {
     tmp <- xyNamesCS(ss)
     if (!is.null(tmp$c)) ss$coordinateSystem <- tmp$c
@@ -503,6 +508,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
       }
       # else don't overwrite user's encode
     }
+    if (!is.null(ss$name)) isSname <<- TRUE
     
     # renderItem helper only for our custom functions ri* 
     # new ECharts custom series, like segmentedDoughnut, want a character string
@@ -516,6 +522,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
     if (!'yAxis' %in% namop) x$opts$yAxis <- list(show=TRUE)
   }
   if (dbg) cat('\n axad=',axad)
+  if ((!'legend' %in% namop) && isSname) cat("\nNote: Some series have names, could add legend with 'legend= list(show=T)'") 
     
   # reading from encode set above  # TODO: when names not 'x','y' ?
   tmp <- series.param$encode
@@ -540,7 +547,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
     for(xy in ena) { coln[xy] <- ctyp[xy] <- colp[xy] <- NA }
     
     if (!is.null(df)) {
-      cnms <- colnames(df); coln[1] <- cnms[colX]; coln[2] <- cnms[colY]
+      cnms <- colnames(df); coln[1] <- cnms[colX[1]]; coln[2] <- cnms[colY[1]]
     }
     s1 <- x$opts$series[[1]]
     if (!is.null(s1$dimensions)) cnms <- s1$dimensions
@@ -550,7 +557,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
               !slb && !paste0('',s1$coordinateSystem) %in% c('leaflet','geo') &&
     	        !any(noCoord %in% names(x$opts))
     if (isAxes) {  # can search for XY axes names/type
-      colp[1] <- colX; colp[2] <- colY;
+      colp[1] <- colX[1]; colp[2] <- colY[1];
       if (!is.null(s1$encode)) {		# chk $data then $dset
         for(xy in ena) {
           exy <- s1$encode[[xy]]
@@ -606,7 +613,6 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
       for(xy in ena) ctyp[[xy]] <- switch(as.character(ctyp[[xy]]),  #'POSIXct'=,'POSIXlt'=,
         'character'=,'factor'= 'category', 'POSIXt'=,'Date'= 'time', 'numeric'= 'value', 'value')
       # finally set xAxis type, name from coln,ctyp if any
-      if (is.null(x$opts$xAxis)) x$opts$xAxis <- list()
 
       lupd <- list(x=list(), y=list())
       if (any(!is.na(ctyp))) for(xy in ena) if (!is.na(ctyp[xy])) lupd[[xy]]$type <- ctyp[[xy]]
@@ -619,7 +625,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
       
       if (dbg) cat('\n colp=',unlist(colp),' ctyp=',unlist(ctyp))
     }   # end isAxes
-
+    
   }   # end preset
   
   x$opts <- .renumber(x$opts)
@@ -809,9 +815,10 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
           nops <- names(opt1)   # add defaults 3D
           for(x in c('xAxis3D','yAxis3D','zAxis3D','grid3D')) {
             a2d <- sub('3D','',x)
-            if (!(x %in% nops)) 
+            if (!(x %in% nops)) {
               wt$x$opts[[x]] <- if (!is.null(wt$x$opts[[a2d]])) wt$x$opts[[a2d]]
                                 else list(show=TRUE)
+            }
           }
         }
         wt$x$opts$xAxis <- wt$x$opts$yAxis <- NULL
@@ -939,7 +946,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
     # define additional filter transforms and option series based on groupBy
     dsf <- optm <- list()  # new filters and options
     filterIdx <- 0
-    for (ii in 1:length(unlist(unique(df[[grnm]]))) ) {   #unlist(unique(
+    for (ii in seq_along(unlist(unique(df[[grnm]]))) ) {   #unlist(unique(
       snames <- c()
       for (x2 in unlist(unique(df[tgrpBy]), use.names=FALSE) ) {
         dst <- opt1$dataset[[ii+1]]  # skip source-dataset 1st
@@ -996,7 +1003,7 @@ ec.init <- function( df= NULL, preset= TRUE, ...,  #ctype= 'scatter',
 #'       mutate(lwr= y-runif(30, 1, 3), upr= y+runif(30, 2, 4))
 #' band.df <- df  |> group_by(cat) |> group_split()
 #' sband <- list()
-#' for(ii in 1:length(band.df))   # build all bands
+#' for(ii in seq_along(band.df))   # build all bands
 #'   sband <- append(sband,
 #'     ecr.band(band.df[[ii]], 'lwr', 'upr', type='stack', smooth=FALSE,
 #'        name= unique(band.df[[ii]]$cat), areaStyle= list(color=c('blue','green','yellow')[ii]))
@@ -1433,7 +1440,8 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
   
   if (ask=='loadRemote' && startsWith(source, 'http')) {
     name <- regmatches(source, regexpr("custom-series/(.*?)/dist", source, perl=TRUE))
-    name <- gsub("custom-series/|/dist", "", name)
+    if (length(name)>0) name <- gsub("custom-series/|/dist", "", name)
+    else name <- fname
     dep <- htmltools::htmlDependency(
       name= name, version= '1.1.1', 
       src= list(href= dirname(source)), script= fname
@@ -1479,7 +1487,7 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
 # convert from R to JS numbering
 .renumber <- function(opa) {
   doEncode <- function(el) {
-    for(i in 1:length(el$encode)) {
+    for(i in seq_along(el$encode)) {
       if (!is.numeric(el$encode[[i]])) next
       el$encode[[i]] <- el$encode[[i]] -1
     }
@@ -1490,8 +1498,8 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
     if (any(names(ss)=='encode') && length(ss$encode)>0) ss <- doEncode(ss)
 
     #if (!is.null(ss$type) && !ss$type %in% noAxisXY) {
-      if (!is.null(ss$xAxisIndex)) ss$xAxisIndex <- ss$xAxisIndex -1
-      if (!is.null(ss$yAxisIndex)) ss$yAxisIndex <- ss$yAxisIndex -1
+      if (!is.null(ss$xAxisIndex) && is.numeric(ss$xAxisIndex)) ss$xAxisIndex <- ss$xAxisIndex -1
+      if (!is.null(ss$yAxisIndex) && is.numeric(ss$yAxisIndex)) ss$yAxisIndex <- ss$yAxisIndex -1
     #}
     if (!is.null(ss$datasetIndex)) ss$datasetIndex <- ss$datasetIndex -1
     if (!is.null(ss$geoIndex)) ss$geoIndex <- ss$geoIndex -1
@@ -1508,9 +1516,11 @@ ec.plugjs <- function(wt=NULL, source=NULL, ask=FALSE) {
   }
   
   decro <- function(x) {
-    if (!is.null(x$dimension) && is.numeric(x$dimension)) x$dimension <- x$dimension -1
-    if (!is.null(x$seriesIndex)) x$seriesIndex <- x$seriesIndex -1   # vMap
     if (!is.null(x$gridIndex)) x$gridIndex <- x$gridIndex -1  # x/y Axis
+       # vMap
+    if (!is.null(x$dimension) && is.numeric(x$dimension)) x$dimension <- x$dimension -1
+    if (!is.null(x$seriesIndex)) x$seriesIndex <- x$seriesIndex -1
+    if (!is.null(x$categories) && is.numeric(x$categories)) x$categories <- x$categories -1
     x
   }
   decType <- \(typ) {   # handle single or multiple items

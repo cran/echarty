@@ -1,7 +1,7 @@
 Package: echarty
 Title: Minimal R/Shiny Interface to JavaScript Library 'ECharts'
-Date: 2025-10-20
-Version: 1.7.0
+Date: 2026-01-06
+Version: 1.7.1
 Authors@R: c(
   person(given= "Larry", family= "Helgason", role= c("aut", "cre"), email= "larry@helgasoft.com", comment="initial code from John Coene's library echarts4r")
   )
@@ -18,9 +18,9 @@ Encoding: UTF-8
 Language: en-US
 VignetteBuilder: rmarkdown, knitr
 NeedsCompilation: no
-Packaged: 2025-10-23 03:12:46 UTC; gugu
+Packaged: 2026-01-09 19:50:59 UTC; gugu
 Author: Larry Helgason [aut, cre] (initial code from John Coene's library
     echarts4r)
 Maintainer: Larry Helgason <larry@helgasoft.com>
 Repository: CRAN
-Date/Publication: 2025-10-23 03:30:02 UTC
+Date/Publication: 2026-01-09 20:10:02 UTC

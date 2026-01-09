@@ -13,8 +13,10 @@ test_that("options preset", {
   expect_equal(p$x$theme, 'jazz')
   expect_equal(p$dependencies[[1]]$name, 'jazz')
   
-  p <- cars |> ec.init() |> ec.theme(name='mine', code='{ "backgroundColor": "pink" }')
+  p <- cars |> ec.init() |> 
+    ec.theme(name='mine', code=jsonlite::fromJSON('{ "backgroundColor": "pink" }'))
   expect_equal(p$x$theme, 'mine')
+  expect_equal(p$x$themeCode$backgroundColor, 'pink')
   
   options(echarty.theme=NULL)
   p <- cars |> ec.init(dbg=T, dataZoom=list(show=TRUE))
@@ -36,6 +38,14 @@ test_that("options preset", {
   expect_equal(p$x$opts$yAxis$gridIndex, 0)
   expect_equal(p$x$opts$visualMap$dimension, 1)
   expect_equal(p$x$opts$dataset[[1]]$dimensions, c('speed','dist'))
+  
+  # single column df with timeline; from ec.init examples
+  p <- data.frame(n=1:5) |> dplyr::group_by(n) |> ec.init(
+    title= list(text= "gauge #%@"),
+    timeline= list(show=TRUE, autoPlay=F),
+    series.param= list(type='gauge', max=5)
+  )
+  expect_equal(p$x$opts$options[[5]]$title$text, "gauge #5")
 })
 
 test_that("webR works with plugins", {
@@ -324,7 +334,7 @@ test_that('polar, pie, radar, themeRiver, parallel, etc.', {
   expect_equal(length(p$x$opts$parallelAxis), 10)
   expect_equal(p$x$opts$parallelAxis[[1]]$name, 'mpg')
   
-  p <- ec.init(series.param= list(
+  p <- ec.init(series.param= list( name='for legend',
     type='gauge', data= list(list(name='score',value=44))))
   expect_equal(names(p$x$opts), 'series')
   

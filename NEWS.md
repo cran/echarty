@@ -1,8 +1,13 @@
 # history of package _echarty_
 
-# echarty 1.7.0  latest in development
+# echarty 1.7.1  latest in development
 
-* _ec.init_ support for _on_,_off_,_register*_,etc. chart instance and echarts API
+* fixes: updated demos code; check for empty df; custom charts .js file names
+* enhance flame chart with vertical labels (ec$vlevel)
+
+# echarty 1.7.0  on CRAN
+
+* new _ec.init_ parameter 'iniOpts' to support _on_,_off_,_register*_,etc. for chart instance
 * new value 'loadRemote' for parameter _ask_ to serve new v.6 custom-series
 * ability to attach data columns to item styles through _encode$data_
 * new flame (or icicle) hierarchical chart support as custom series

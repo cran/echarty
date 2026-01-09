@@ -18,7 +18,7 @@ test_that("registerAll + custom-series v.6", {
   expect_equal(class(p$x$theme), 'list')
   
   p <- ec.init(
-    load= 'https://cdn.jsdelivr.net/gh/apache/echarts-custom-series@main/custom-series/segmentedDoughnut/dist/index.auto.js',
+    load= 'https://cdn.jsdelivr.net/gh/apache/echarts-custom-series@main/custom-series/segmentedDoughnut/dist/segmented-doughnut.auto.min.js',
     ask= 'loadRemote',
     series.param= list(
       type= 'custom', renderItem= 'segmentedDoughnut',
@@ -318,6 +318,7 @@ test_that(".merlis", {
 test_that('stops are working in echarty.R', {
   df <- data.frame(x = 1:10, y = seq(1, 20, by=2))
   expect_error(ec.init(0)) # df
+  expect_error(data.frame() |> ec.init())  # empty df
   expect_error(ec.init(cars, tl.series= list(d=1))) # groups
   expect_silent(ec.init(mtcars |> group_by(gear), tl.series= list(type='map'))) # no name/value, can use encode; 'regions' err
   expect_silent(ec.init(df |> group_by(y), series.param= list(type='bar')))
@@ -351,6 +352,11 @@ test_that('stops are working in echarty.R', {
   expect_error(data.frame(name= c('A','B','C','D'), value= c(1,2,3,1), cat=c(1,1,2,2)) |>
     group_by(cat) |> ec.init(timeline= list(s=TRUE), dbg=T, series.param= list(type='pie'))
   )
+})
+
+test_that('unusual cases', {
+  p <- ec.init(series.param= list(data=c(150, 230, 224)) )  # allowed
+  expect_equal(length(p$x$opts$series[[1]]$data), 3)
 })
 
 test_that('mostly for coverage', {

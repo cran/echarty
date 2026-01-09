@@ -519,11 +519,11 @@ ec.util <- function(cmd='sf.series', ..., js=NULL, event='click') {
 #'  \item **values** = list for customized \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data} \cr
 #'  \item **names** = named lists useful for named data like \href{https://echarts.apache.org/en/option.html#series-sankey.links}{sankey links}.
 #'  \item **dendrogram** = build series data for Hierarchical Clustering dendrogram
+#'  \item **flame** = build series data (lists of name,id,value) for hierarchy display by _renderItem_
 #'  \item **treePC** = build series data for tree charts from parent/children data.frame
-#'  \item **treeTT** = build series data for tree charts from data.frame like Titanic.\cr
+#'  \item **treeTT** = build series data for tree charts from data.frame like Titanic.
 #'  \item **boxplot** = build dataset and source lists, see Details
 #'  \item **borders** = build geoJson string from map_data region borders, see Details
-#'  \item **flame** = list of hierarchical series data to be presented by _renderItem_\cr
 #' }
 #' @param header for dataset, to include the column names or not, default TRUE. Set it to FALSE for \href{https://echarts.apache.org/en/option.html#series-scatter.data}{series.data}.\cr
 #' @param ... optional parameters\cr
@@ -607,6 +607,7 @@ ec.util <- function(cmd='sf.series', ..., js=NULL, event='click') {
 #' @export
 ec.data <- function(df, format='dataset', header=FALSE, ...) {
   stopifnot('ec.data: expecting parameter df'= !missing(df))
+  args <- list(...)
   
   if (format=='dendrogram') { 
     stopifnot('ec.data: df should be hclust for dendrogram'= inherits(df, 'hclust'))
@@ -671,17 +672,18 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
       data <- list()
       filtered_json <- filter_json(json_obj, id)  # Note: R doesn't have structuredClone by default
       recur <- function(item, start = 0, level = 0, wit = NULL) {
-        temp <- list(
-          name = item$name,
-          id = item$name,
-          value = c(
+        val <- c(
             level,
             start,
             start + wit,
             item$name,
-            round(wit / root_val * 100, 2),
-            item$value
-          )
+            round(wit / root_val * 100, 2)
+        )
+        if (!is.null(item$value)) val <- c(val, item$value)
+        temp <- list(
+          name = item$name,
+          id = item$name,
+          value = val
         )
         data <<- c(data, list(temp))  # Use <<- to modify parent scope
         
@@ -701,7 +703,6 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
       return(data)
     }
     
-    args <- list(...)
     out <- recursion_json(df, args$name)
     return(out)
   }
@@ -788,7 +789,6 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
   tmp <- lapply(n, \(i) lapply(df, "[[", i))  # rows to lists, preserve column types
   
   if (format=='boxplot') {
-    args <- list(...)
     rady <- if ('ol.radius' %in% names(args)) args$ol.radius else NULL
     jitter <- if ('jitter' %in% names(args)) args$jitter else 0
     layout <- if ('layout' %in% names(args)) args$layout else 'h'
@@ -940,7 +940,6 @@ ec.data <- function(df, format='dataset', header=FALSE, ...) {
     datset <- lapply(tmp, \(x) list(value=unlist(x, use.names=FALSE)))
   } 
   else { # format=='names'
-    args <- list(...)
     if ('nasep' %in% names(args)) {
       stopifnot("data('names'): nasep should be 1 char"= nchar(args$nasep)==1)
       # names separator is present, replace compound names with nested lists
@@ -1063,11 +1062,17 @@ return template.replace(/%@|%L@|%LR@|%R@|%R2@|%M@/g, (m) => {
 	tmp <- suppressWarnings(as.numeric(args) -1)
 	if (all(is.na(tmp))) {   
 		# multiple column names (non-numeric strings)
-		# to find position in colnames
+		# to find position in colnames, or JS dimensionNames
 	  tmp <- lenv$coNames 
-		stopifnot("ec.clmn: colnames missing.
-    Use ec.clmn after ec.data and/or inside ec.init(df).
-    Otherwise use column indexes instead of names."= !is.null(tmp))
+	  if (is.null(tmp)) {
+	    warning("ec.clmn: colnames missing.
+         Use ec.clmn after ec.data and/or inside ec.init(df).
+         Otherwise use column indexes instead of names.", call.=FALSE)
+	    return('col names?')
+	  }
+    # 		stopifnot("ec.clmn: colnames missing.
+    #     Use ec.clmn after ec.data and/or inside ec.init(df).
+    #     Otherwise use column indexes instead of names."= !is.null(tmp))
 		spf <- paste0(spf, " pos=['", paste(tmp, collapse="','"), "'];")
 		t0 <- sapply(args, \(s) toString(paste0("x.data['", s,"']")) )
 		t0 <- paste(t0, collapse=',')
